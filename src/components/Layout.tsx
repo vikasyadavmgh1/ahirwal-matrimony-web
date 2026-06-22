@@ -15,6 +15,9 @@ const navItems = [
   { to: '/profile', icon: User, label: 'Profile' },
 ]
 
+// Mobile bottom nav: Home, Browse, Interests, Chat, Profile (most essential)
+const mobileNavItems = [navItems[0], navItems[1], navItems[2], navItems[4], navItems[6]]
+
 export default function Layout() {
   const navigate = useNavigate()
   const { clearAuth, accessToken } = useAuthStore()
@@ -81,7 +84,7 @@ export default function Layout() {
 
       {/* Bottom nav (mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 flex">
-        {navItems.slice(0, 5).map(({ to, icon: Icon, label }) => (
+        {mobileNavItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}

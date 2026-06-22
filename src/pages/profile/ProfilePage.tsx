@@ -2,11 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Edit2, MapPin, GraduationCap, Briefcase, Heart, Shield, Crown } from 'lucide-react'
 import { profileApi } from '../../api/profile'
-import { useAuthStore } from '../../store/authStore'
 
 export default function ProfilePage() {
   const { id } = useParams()
-  useAuthStore()
   const isOwn = !id
 
   const { data: profile, isLoading } = useQuery({
@@ -27,10 +25,14 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6 text-center py-20 text-gray-500">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-500 px-4">
         {isOwn ? (
-          <div>
-            <p className="text-lg font-semibold mb-2">No profile yet</p>
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+              <Heart className="w-8 h-8 text-primary-400" />
+            </div>
+            <p className="text-lg font-semibold text-gray-900 mb-1">No profile yet</p>
+            <p className="text-sm text-gray-500 mb-5">Create your profile to start finding matches</p>
             <Link to="/profile/edit" className="btn-primary inline-block">Create Profile</Link>
           </div>
         ) : (
