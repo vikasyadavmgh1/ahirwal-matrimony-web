@@ -1,0 +1,151 @@
+import { useQuery } from '@tanstack/react-query'
+import { Link, useParams } from 'react-router-dom'
+import { Edit2, MapPin, GraduationCap, Briefcase, Heart, Shield, Crown } from 'lucide-react'
+import { profileApi } from '../../api/profile'
+import { useAuthStore } from '../../store/authStore'
+
+export default function ProfilePage() {
+  const { id } = useParams()
+  useAuthStore()
+  const isOwn = !id
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile', id ?? 'me'],
+    queryFn: () =>
+      isOwn
+        ? profileApi.getMyProfile().then((r) => r.data.data)
+        : profileApi.getProfile(id!).then((r) => r.data.data),
+  })
+
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="card h-96 animate-pulse" />
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-6 text-center py-20 text-gray-500">
+        {isOwn ? (
+          <div>
+            <p className="text-lg font-semibold mb-2">No profile yet</p>
+            <Link to="/profile/edit" className="btn-primary inline-block">Create Profile</Link>
+          </div>
+        ) : (
+          <p>Profile not found</p>
+        )}
+      </div>
+    )
+  }
+
+  const age = profile.dateOfBirth
+    ? Math.floor((Date.now() - new Date(profile.dateOfBirth).getTime()) / 31557600000)
+    : null
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      {/* Hero */}
+      <div className="card overflow-hidden">
+        {/* Avatar */}
+        <div className="relative h-56 bg-gradient-to-br from-primary-100 to-saffron-400/20">
+          {profile.avatarUrl ? (
+            <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-6xl text-primary-300">
+              {profile.fullName?.charAt(0) ?? '?'}
+            </div>
+          )}
+          <div className="absolute bottom-3 right-3 flex gap-2">
+            {profile.premium && (
+              <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                <Crown size={12} /> Premium
+              </span>
+            )}
+            {profile.verified && (
+              <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                <Shield size={12} /> Verified
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Basic info */}
+        <div className="p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">
+                {profile.fullName ?? 'No name'}
+                {age && <span className="text-gray-500 font-normal ml-2 text-base">{age} yrs</span>}
+              </h1>
+              {profile.fullNameHindi && (
+                <p className="text-gray-500 text-sm">{profile.fullNameHindi}</p>
+              )}
+            </div>
+            {isOwn && (
+              <Link to="/profile/edit" className="btn-secondary flex items-center gap-1.5 text-sm py-2 px-3">
+                <Edit2 size={14} /> Edit
+              </Link>
+            )}
+          </div>
+
+          {/* Completion bar (own profile only) */}
+          {isOwn && (
+            <div className="mt-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Profile completion</span>
+                <span>{profile.profileCompletePct}%</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full">
+                <div
+                  className="h-2 bg-primary-500 rounded-full transition-all"
+                  style={{ width: `${profile.profileCompletePct}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="card p-5 space-y-3">
+        <h2 className="font-semibold text-gray-900">Basic Details</h2>
+        {[
+          { icon: MapPin, label: 'Location', value: [profile.nativeLocationId?.district, profile.nativeLocationId?.state].filter(Boolean).join(', ') || null },
+          { icon: GraduationCap, label: 'Education', value: profile.educationLevel?.replace(/_/g, ' ') ?? null },
+          { icon: Briefcase, label: 'Occupation', value: profile.occupation?.replace(/_/g, ' ') ?? null },
+          { icon: Heart, label: 'Gotra', value: profile.gotraId?.name ?? null },
+        ].map(({ icon: Icon, label, value }) =>
+          value ? (
+            <div key={label} className="flex items-center gap-3 text-sm">
+              <Icon size={16} className="text-gray-400 flex-shrink-0" />
+              <span className="text-gray-500 w-24 flex-shrink-0">{label}</span>
+              <span className="text-gray-900">{value}</span>
+            </div>
+          ) : null
+        )}
+      </div>
+
+      {/* About */}
+      {profile.aboutMe && (
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-900 mb-2">About</h2>
+          <p className="text-gray-600 text-sm leading-relaxed">{profile.aboutMe}</p>
+        </div>
+      )}
+
+      {/* Gallery */}
+      {profile.galleryUrls && profile.galleryUrls.length > 0 && (
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-900 mb-3">Gallery</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {profile.galleryUrls.map((url, i) => (
+              <img key={i} src={url} alt="" className="aspect-square object-cover rounded-lg" />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
