@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, Save, Sparkles } from 'lucide-react'
+import { Camera, ChevronLeft, Save, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
+import axios from 'axios'
 import { profileApi } from '../../api/profile'
 import { masterApi } from '../../api/master'
 import type { ProfileDTO, Gender, EducationLevel, Occupation, MatrimonialStatus } from '../../types'
@@ -12,6 +13,37 @@ export default function EditProfilePage() {
   const [searchParams] = useSearchParams()
   const isNewUser = searchParams.get('new') === '1'
   const qc = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return }
+
+    setUploadingPhoto(true)
+    try {
+      // Get presigned URL from backend
+      const { data: presignData } = await profileApi.avatarPresignedUrl()
+      const { uploadUrl, downloadUrl } = presignData.data
+
+      // Upload directly to S3 (no auth header — presigned URL handles auth)
+      await axios.put(uploadUrl, file, {
+        headers: { 'Content-Type': file.type },
+        withCredentials: false,
+      })
+
+      // Save the avatar URL on the profile
+      set('avatarUrl', downloadUrl)
+      toast.success('Photo uploaded! Save profile to confirm.')
+    } catch {
+      toast.error('Photo upload failed. Please try again.')
+    } finally {
+      setUploadingPhoto(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   const { data: existingProfile } = useQuery({
     queryKey: ['profile', 'me'],
@@ -87,6 +119,41 @@ export default function EditProfilePage() {
         onSubmit={(e) => { e.preventDefault(); saveMut.mutate() }}
         className="space-y-5"
       >
+        {/* Photo upload */}
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-900 mb-3">Profile Photo <span className="text-gray-400 font-normal text-sm">(optional)</span></h2>
+          <div className="flex items-center gap-4">
+            {/* Avatar preview */}
+            <div className="w-20 h-20 rounded-full bg-primary-100 flex-shrink-0 overflow-hidden border-2 border-primary-200">
+              {form.avatarUrl
+                ? <img src={form.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-3xl text-primary-300">
+                    {form.fullName?.charAt(0)?.toUpperCase() ?? '?'}
+                  </div>
+              }
+            </div>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="btn-secondary flex items-center gap-2 text-sm py-2 px-4"
+              >
+                <Camera size={15} />
+                {uploadingPhoto ? 'Uploading…' : form.avatarUrl ? 'Change Photo' : 'Upload Photo'}
+              </button>
+              <p className="text-xs text-gray-400 mt-1.5">JPG, PNG or WebP · Max 5 MB</p>
+            </div>
+          </div>
+        </div>
+
         {/* Basic */}
         <div className="card p-5 space-y-4">
           <h2 className="font-semibold text-gray-900">Basic Information</h2>
@@ -206,34 +273,47 @@ export default function EditProfilePage() {
         <div className="card p-5 space-y-4">
           <h2 className="font-semibold text-gray-900">Physical Details</h2>
           <div className="grid grid-cols-2 gap-4">
-            {/* Height: show in ft/in, store in cm */}
-            <Field label="Height (ft / in)">
-              <div className="flex gap-2">
-                <select
-                  className="input"
-                  value={form.heightCm ? Math.floor((form.heightCm / 2.54) / 12) : ''}
-                  onChange={(e) => {
-                    const ft = parseInt(e.target.value) || 0
-                    const currentIn = form.heightCm ? Math.round(((form.heightCm / 2.54) % 12)) : 0
-                    set('heightCm', Math.round((ft * 12 + currentIn) * 2.54) as any)
-                  }}
-                >
-                  <option value="">ft</option>
-                  {[4,5,6,7].map(f => <option key={f} value={f}>{f} ft</option>)}
-                </select>
-                <select
-                  className="input"
-                  value={form.heightCm ? Math.round(((form.heightCm / 2.54) % 12)) : ''}
-                  onChange={(e) => {
-                    const inch = parseInt(e.target.value) || 0
-                    const currentFt = form.heightCm ? Math.floor((form.heightCm / 2.54) / 12) : 5
-                    set('heightCm', Math.round((currentFt * 12 + inch) * 2.54) as any)
-                  }}
-                >
-                  <option value="">in</option>
-                  {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => <option key={i} value={i}>{i} in</option>)}
-                </select>
-              </div>
+            {/* Height: ft/in display, cm stored.
+                Fix: use Math.round(cm/2.54) to get total inches first,
+                then split — avoids float rounding making 5ft→4ft */}
+            <Field label="Height">
+              {(() => {
+                const totalIn = form.heightCm ? Math.round(form.heightCm / 2.54) : null
+                const dispFt  = totalIn != null ? Math.floor(totalIn / 12) : ''
+                const dispIn  = totalIn != null ? totalIn % 12 : ''
+                return (
+                  <div className="flex gap-2">
+                    <select
+                      className="input"
+                      value={dispFt}
+                      onChange={(e) => {
+                        const ft = parseInt(e.target.value)
+                        if (isNaN(ft)) { set('heightCm', null as any); return }
+                        const inVal = typeof dispIn === 'number' ? dispIn : 0
+                        set('heightCm', Math.round((ft * 12 + inVal) * 2.54) as any)
+                      }}
+                    >
+                      <option value="">Select feet</option>
+                      {[4,5,6,7].map(f => <option key={f} value={f}>{f} ft</option>)}
+                    </select>
+                    <select
+                      className="input"
+                      value={dispIn}
+                      onChange={(e) => {
+                        const inch = parseInt(e.target.value)
+                        if (isNaN(inch)) return
+                        const ftVal = typeof dispFt === 'number' ? dispFt : 5
+                        set('heightCm', Math.round((ftVal * 12 + inch) * 2.54) as any)
+                      }}
+                    >
+                      <option value="">Select inches</option>
+                      {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => (
+                        <option key={i} value={i}>{i} inch{i !== 1 ? 'es' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                )
+              })()}
               {form.heightCm ? <p className="text-xs text-gray-400 mt-1">{form.heightCm} cm</p> : null}
             </Field>
             <Field label="Weight (kg)">
