@@ -24,8 +24,8 @@ export default function EditProfilePage() {
 
     setUploadingPhoto(true)
     try {
-      // Get presigned URL from backend
-      const { data: presignData } = await profileApi.avatarPresignedUrl()
+      // Get presigned URL from backend (pass file MIME type so backend picks right extension)
+      const { data: presignData } = await profileApi.avatarPresignedUrl(file.type)
       const { uploadUrl, downloadUrl } = presignData.data
 
       // Upload directly to S3 (no auth header — presigned URL handles auth)

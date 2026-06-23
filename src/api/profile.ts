@@ -21,8 +21,10 @@ export const profileApi = {
   getProfile: (id: string) =>
     apiClient.get<ApiResponse<ProfileDTO>>(`/profiles/${id}`),
 
-  avatarPresignedUrl: () =>
-    apiClient.post<ApiResponse<PresignedUrlResponse>>('/profiles/me/avatar/presigned-url'),
+  avatarPresignedUrl: (contentType?: string) =>
+    apiClient.post<ApiResponse<PresignedUrlResponse>>('/profiles/me/avatar/presigned-url', null, {
+      params: contentType ? { contentType } : {},
+    }),
 
   galleryPresignedUrl: () =>
     apiClient.post<ApiResponse<PresignedUrlResponse>>('/profiles/me/gallery/presigned-url'),
