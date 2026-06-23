@@ -104,7 +104,21 @@ export default function EditProfilePage() {
           </Field>
 
           <Field label="Date of Birth">
-            <input type="date" className="input" value={form.dateOfBirth ?? ''} onChange={(e) => set('dateOfBirth', e.target.value)} />
+            <input
+              type="date"
+              className="input"
+              value={form.dateOfBirth ?? ''}
+              max={new Date(Date.now() - 21 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+              onChange={(e) => {
+                const dob = e.target.value
+                if (dob) {
+                  const age = Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+                  if (age < 21) { toast.error('Minimum age is 21 years'); return }
+                }
+                set('dateOfBirth', dob)
+              }}
+            />
+            <p className="text-xs text-gray-400 mt-1">Minimum age: 21 years</p>
           </Field>
 
           <Field label="Marital Status">
