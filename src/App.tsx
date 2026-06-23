@@ -10,6 +10,7 @@ import MatchesPage from './pages/matches/MatchesPage'
 import InterestsPage from './pages/interests/InterestsPage'
 import ShortlistPage from './pages/shortlist/ShortlistPage'
 import ChatPage from './pages/chat/ChatPage'
+import ConversationPage from './pages/chat/ConversationPage'
 import SubscriptionPage from './pages/subscription/SubscriptionPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import EditProfilePage from './pages/profile/EditProfilePage'
@@ -42,6 +43,7 @@ function App() {
             <Route path="/interests" element={<InterestsPage />} />
             <Route path="/shortlist" element={<ShortlistPage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/:conversationId" element={<ConversationPage />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, X, Clock, MessageCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { interestsApi } from '../../api/interests'
 import type { InterestResponse } from '../../types'
@@ -132,9 +133,13 @@ export default function InterestsPage() {
                   </>
                 )}
                 {interest.status === 'ACCEPTED' && interest.matchId && (
-                  <button className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors">
+                  <Link
+                    to={`/chat`}
+                    className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors"
+                    title="Open chat"
+                  >
                     <MessageCircle size={16} />
-                  </button>
+                  </Link>
                 )}
                 {tab === 'sent' && interest.status === 'PENDING' && (
                   <button

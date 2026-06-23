@@ -1,11 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { Edit2, MapPin, GraduationCap, Briefcase, Heart, Shield, Crown } from 'lucide-react'
+import { Edit2, MapPin, GraduationCap, Briefcase, Heart, Shield, Crown, BookHeart, Send, Check } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { profileApi } from '../../api/profile'
+import { interestsApi } from '../../api/interests'
+import { shortlistApi } from '../../api/shortlist'
 
 export default function ProfilePage() {
   const { id } = useParams()
   const isOwn = !id
+  const qc = useQueryClient()
+  const [interestMsg, setInterestMsg] = useState('')
+  const [showMsgBox, setShowMsgBox] = useState(false)
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', id ?? 'me'],
@@ -13,6 +20,32 @@ export default function ProfilePage() {
       isOwn
         ? profileApi.getMyProfile().then((r) => r.data.data)
         : profileApi.getProfile(id!).then((r) => r.data.data),
+  })
+
+  const { data: slStatus } = useQuery({
+    queryKey: ['shortlist-status', id],
+    queryFn: () => shortlistApi.isShortlisted(id!).then((r) => r.data.data),
+    enabled: !!id && !isOwn,
+  })
+
+  const interestMut = useMutation({
+    mutationFn: () => interestsApi.sendInterest(id!, interestMsg || undefined),
+    onSuccess: () => {
+      toast.success('Interest sent!')
+      setShowMsgBox(false)
+      qc.invalidateQueries({ queryKey: ['interests'] })
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Could not send interest'),
+  })
+
+  const shortlistMut = useMutation({
+    mutationFn: () =>
+      slStatus ? shortlistApi.remove(id!) : shortlistApi.add(id!),
+    onSuccess: () => {
+      toast.success(slStatus ? 'Removed from shortlist' : 'Added to shortlist')
+      qc.invalidateQueries({ queryKey: ['shortlist-status', id] })
+      qc.invalidateQueries({ queryKey: ['shortlist'] })
+    },
   })
 
   if (isLoading) {
@@ -50,7 +83,6 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
       {/* Hero */}
       <div className="card overflow-hidden">
-        {/* Avatar */}
         <div className="relative h-56 bg-gradient-to-br from-primary-100 to-saffron-400/20">
           {profile.avatarUrl ? (
             <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -73,7 +105,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Basic info */}
         <div className="p-5">
           <div className="flex items-start justify-between">
             <div>
@@ -100,11 +131,63 @@ export default function ProfilePage() {
                 <span>{profile.profileCompletePct}%</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full">
-                <div
-                  className="h-2 bg-primary-500 rounded-full transition-all"
-                  style={{ width: `${profile.profileCompletePct}%` }}
-                />
+                <div className="h-2 bg-primary-500 rounded-full" style={{ width: `${profile.profileCompletePct}%` }} />
               </div>
+            </div>
+          )}
+
+          {/* Actions for other profiles */}
+          {!isOwn && (
+            <div className="flex gap-2 mt-4">
+              {/* Shortlist toggle */}
+              <button
+                onClick={() => shortlistMut.mutate()}
+                disabled={shortlistMut.isPending}
+                className={`flex items-center gap-1.5 text-sm py-2 px-3 rounded-lg border transition-colors ${
+                  slStatus
+                    ? 'bg-primary-50 text-primary-600 border-primary-200'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <BookHeart size={15} />
+                {slStatus ? 'Shortlisted' : 'Shortlist'}
+              </button>
+
+              {/* Send Interest */}
+              {!showMsgBox ? (
+                <button
+                  onClick={() => setShowMsgBox(true)}
+                  className="btn-primary flex items-center gap-1.5 text-sm py-2 px-4 flex-1"
+                >
+                  <Send size={15} /> Send Interest
+                </button>
+              ) : (
+                <div className="flex-1 flex flex-col gap-2">
+                  <textarea
+                    className="input text-sm resize-none"
+                    rows={2}
+                    placeholder="Add a personal message (optional)..."
+                    value={interestMsg}
+                    onChange={(e) => setInterestMsg(e.target.value)}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => interestMut.mutate()}
+                      disabled={interestMut.isPending}
+                      className="btn-primary flex items-center gap-1.5 text-sm py-1.5 px-3"
+                    >
+                      <Check size={14} /> {interestMut.isPending ? 'Sending…' : 'Send'}
+                    </button>
+                    <button
+                      onClick={() => setShowMsgBox(false)}
+                      className="btn-secondary text-sm py-1.5 px-3"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -129,7 +212,6 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* About */}
       {profile.aboutMe && (
         <div className="card p-5">
           <h2 className="font-semibold text-gray-900 mb-2">About</h2>
@@ -137,7 +219,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Gallery */}
       {profile.galleryUrls && profile.galleryUrls.length > 0 && (
         <div className="card p-5">
           <h2 className="font-semibold text-gray-900 mb-3">Gallery</h2>

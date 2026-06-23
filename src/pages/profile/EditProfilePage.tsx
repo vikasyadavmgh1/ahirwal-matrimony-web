@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Save } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ChevronLeft, Save, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { profileApi } from '../../api/profile'
 import { masterApi } from '../../api/master'
@@ -9,6 +9,8 @@ import type { ProfileDTO, Gender, EducationLevel, Occupation, MatrimonialStatus 
 
 export default function EditProfilePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isNewUser = searchParams.get('new') === '1'
   const qc = useQueryClient()
 
   const { data: existingProfile } = useQuery({
@@ -38,17 +40,30 @@ export default function EditProfilePage() {
     onSuccess: () => {
       toast.success('Profile saved!')
       qc.invalidateQueries({ queryKey: ['profile'] })
-      navigate('/profile')
+      navigate(isNewUser ? '/dashboard' : '/profile')
     },
     onError: () => toast.error('Failed to save profile'),
   })
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* New user welcome banner */}
+      {isNewUser && (
+        <div className="bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl p-4 mb-5 flex items-start gap-3">
+          <Sparkles size={20} className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Welcome to Ahirwal Matrimony! 🙏</p>
+            <p className="text-primary-100 text-sm mt-0.5">Complete your profile so potential matches can find you. The more you fill, the better your matches.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-700">
-          <ChevronLeft size={24} />
-        </button>
+        {!isNewUser && (
+          <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-700">
+            <ChevronLeft size={24} />
+          </button>
+        )}
         <h1 className="text-xl font-bold text-gray-900">
           {existingProfile ? 'Edit Profile' : 'Create Profile'}
         </h1>

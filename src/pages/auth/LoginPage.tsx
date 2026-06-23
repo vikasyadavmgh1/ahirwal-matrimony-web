@@ -37,10 +37,15 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const res = await authApi.verifyOtp(phone, otp)
-      const { accessToken, refreshToken, userId } = res.data.data
+      const { accessToken, refreshToken, userId, isNewUser } = res.data.data
       setTokens(accessToken, refreshToken, userId)
-      toast.success('Welcome!')
-      navigate('/dashboard')
+      if (isNewUser) {
+        toast.success('Welcome! Please complete your profile.')
+        navigate('/profile/edit?new=1')
+      } else {
+        toast.success('Welcome back!')
+        navigate('/dashboard')
+      }
     } catch {
       toast.error('Invalid OTP. Please try again.')
     } finally {
