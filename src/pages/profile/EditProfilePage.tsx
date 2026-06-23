@@ -32,17 +32,31 @@ export default function EditProfilePage() {
   const set = <K extends keyof ProfileDTO>(k: K, v: ProfileDTO[K]) =>
     setForm((f) => ({ ...f, [k]: v }))
 
+  // Backend expects gotraId/prefMotherGotraId as plain UUID strings, not full objects
+  const buildPayload = () => ({
+    ...form,
+    gotraId: (form.gotraId as any)?.id ?? form.gotraId ?? null,
+    prefMotherGotraId: (form.prefMotherGotraId as any)?.id ?? form.prefMotherGotraId ?? null,
+  })
+
   const saveMut = useMutation({
-    mutationFn: () =>
-      existingProfile
-        ? profileApi.updateProfile(form).then((r) => r.data.data)
-        : profileApi.createProfile(form).then((r) => r.data.data),
-    onSuccess: () => {
+    mutationFn: () => {
+      const payload = buildPayload()
+      return existingProfile
+        ? profileApi.updateProfile(payload).then((r) => r.data.data)
+        : profileApi.createProfile(payload).then((r) => r.data.data)
+    },
+    onSuccess: (savedProfile) => {
       toast.success('Profile saved!')
+      // Set cache directly so profile page shows immediately without a re-fetch lag
+      qc.setQueryData(['profile', 'me'], savedProfile)
       qc.invalidateQueries({ queryKey: ['profile'] })
       navigate(isNewUser ? '/dashboard' : '/profile')
     },
-    onError: () => toast.error('Failed to save profile'),
+    onError: (e: any) => {
+      const msg = e?.response?.data?.message ?? 'Failed to save profile'
+      toast.error(msg)
+    },
   })
 
   return (
