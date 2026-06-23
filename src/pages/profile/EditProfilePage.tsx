@@ -95,10 +95,6 @@ export default function EditProfilePage() {
             <input className="input" value={form.fullName ?? ''} onChange={(e) => set('fullName', e.target.value)} placeholder="Your full name" />
           </Field>
 
-          <Field label="Full Name (Hindi)">
-            <input className="input" value={form.fullNameHindi ?? ''} onChange={(e) => set('fullNameHindi', e.target.value)} placeholder="हिंदी में नाम" />
-          </Field>
-
           <Field label="Gender">
             <select className="input" value={form.gender ?? ''} onChange={(e) => set('gender', e.target.value as Gender)}>
               <option value="">Select gender</option>
@@ -135,10 +131,6 @@ export default function EditProfilePage() {
                 <option key={g.id} value={g.id}>{g.name}{g.nameHindi ? ` (${g.nameHindi})` : ''}</option>
               ))}
             </select>
-          </Field>
-
-          <Field label="Kuldevi">
-            <input className="input" value={form.kuldevi ?? ''} onChange={(e) => set('kuldevi', e.target.value)} placeholder="e.g., Sachiya Mata" />
           </Field>
 
           <Field label="Manglik">
