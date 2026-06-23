@@ -163,19 +163,38 @@ export default function EditProfilePage() {
           <Field label="Education Level">
             <select className="input" value={form.educationLevel ?? ''} onChange={(e) => set('educationLevel', e.target.value as EducationLevel)}>
               <option value="">Select</option>
-              {['BELOW_10TH', 'TENTH', 'TWELFTH', 'GRADUATE', 'POST_GRADUATE', 'DOCTORATE'].map((l) => (
-                <option key={l} value={l}>{l.replace(/_/g, ' ')}</option>
-              ))}
+              {[
+                { v: 'BELOW_10TH', l: 'Below 10th' },
+                { v: 'TENTH', l: '10th Pass' },
+                { v: 'TWELFTH', l: '12th Pass' },
+                { v: 'GRADUATE', l: 'Graduate (B.A / B.Sc / B.Com / B.Tech etc.)' },
+                { v: 'POST_GRADUATE', l: 'Post Graduate (M.A / M.Sc / MBA etc.)' },
+                { v: 'DOCTORATE', l: 'Doctorate (PhD)' },
+              ].map(({ v, l }) => <option key={v} value={v}>{l}</option>)}
             </select>
+          </Field>
+
+          <Field label="College / School Name">
+            <input className="input" value={form.educationDetail ?? ''} onChange={(e) => set('educationDetail', e.target.value)} placeholder="e.g., IIT Delhi, St. Mary's School" />
           </Field>
 
           <Field label="Occupation">
             <select className="input" value={form.occupation ?? ''} onChange={(e) => set('occupation', e.target.value as Occupation)}>
               <option value="">Select</option>
-              {['FARMER', 'BUSINESS', 'GOVERNMENT_JOB', 'PRIVATE_JOB', 'SELF_EMPLOYED', 'STUDENT', 'OTHER'].map((o) => (
-                <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>
-              ))}
+              {[
+                { v: 'FARMER', l: 'Farmer / Agriculture' },
+                { v: 'BUSINESS', l: 'Business / Self-employed' },
+                { v: 'GOVERNMENT_JOB', l: 'Government Job' },
+                { v: 'PRIVATE_JOB', l: 'Private Job / Corporate' },
+                { v: 'SELF_EMPLOYED', l: 'Professional (Doctor / Lawyer / CA etc.)' },
+                { v: 'STUDENT', l: 'Student' },
+                { v: 'OTHER', l: 'Other' },
+              ].map(({ v, l }) => <option key={v} value={v}>{l}</option>)}
             </select>
+          </Field>
+
+          <Field label="Job Title / Role / Company">
+            <input className="input" value={form.occupationDetail ?? ''} onChange={(e) => set('occupationDetail', e.target.value)} placeholder="e.g., Software Engineer at TCS, Constable, Own shop" />
           </Field>
 
           <Field label="Annual Income (LPA)">
