@@ -206,8 +206,35 @@ export default function EditProfilePage() {
         <div className="card p-5 space-y-4">
           <h2 className="font-semibold text-gray-900">Physical Details</h2>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Height (cm)">
-              <input type="number" className="input" value={form.heightCm ?? ''} onChange={(e) => set('heightCm', parseInt(e.target.value) as any)} placeholder="e.g., 170" />
+            {/* Height: show in ft/in, store in cm */}
+            <Field label="Height (ft / in)">
+              <div className="flex gap-2">
+                <select
+                  className="input"
+                  value={form.heightCm ? Math.floor((form.heightCm / 2.54) / 12) : ''}
+                  onChange={(e) => {
+                    const ft = parseInt(e.target.value) || 0
+                    const currentIn = form.heightCm ? Math.round(((form.heightCm / 2.54) % 12)) : 0
+                    set('heightCm', Math.round((ft * 12 + currentIn) * 2.54) as any)
+                  }}
+                >
+                  <option value="">ft</option>
+                  {[4,5,6,7].map(f => <option key={f} value={f}>{f} ft</option>)}
+                </select>
+                <select
+                  className="input"
+                  value={form.heightCm ? Math.round(((form.heightCm / 2.54) % 12)) : ''}
+                  onChange={(e) => {
+                    const inch = parseInt(e.target.value) || 0
+                    const currentFt = form.heightCm ? Math.floor((form.heightCm / 2.54) / 12) : 5
+                    set('heightCm', Math.round((currentFt * 12 + inch) * 2.54) as any)
+                  }}
+                >
+                  <option value="">in</option>
+                  {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => <option key={i} value={i}>{i} in</option>)}
+                </select>
+              </div>
+              {form.heightCm ? <p className="text-xs text-gray-400 mt-1">{form.heightCm} cm</p> : null}
             </Field>
             <Field label="Weight (kg)">
               <input type="number" className="input" value={form.weightKg ?? ''} onChange={(e) => set('weightKg', parseInt(e.target.value) as any)} placeholder="e.g., 65" />
