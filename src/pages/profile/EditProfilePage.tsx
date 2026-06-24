@@ -76,8 +76,11 @@ export default function EditProfilePage() {
       })
 
       const { data: updatedProfile } = await profileApi.addGalleryPhoto(downloadUrl)
+      if (!updatedProfile?.data) {
+        throw new Error('Please save your profile first before adding gallery photos')
+      }
       qc.setQueryData(['profile', 'me'], updatedProfile.data)
-      set('galleryUrls', updatedProfile.data.galleryUrls)
+      set('galleryUrls', updatedProfile.data.galleryUrls ?? [])
       toast.success('Gallery photo added!')
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? err?.message ?? 'Unknown error'
