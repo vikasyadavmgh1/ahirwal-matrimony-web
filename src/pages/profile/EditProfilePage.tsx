@@ -52,6 +52,12 @@ export default function EditProfilePage() {
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return }
 
+    if (!existingProfile) {
+      toast.error('Please save your profile first before adding gallery photos')
+      if (galleryInputRef.current) galleryInputRef.current.value = ''
+      return
+    }
+
     const currentGallery = form.galleryUrls ?? []
     if (currentGallery.length >= 5) {
       toast.error('Maximum 5 gallery photos allowed')
@@ -62,17 +68,19 @@ export default function EditProfilePage() {
     try {
       const { data: presignData } = await profileApi.galleryPresignedUrl(file.type)
       const { uploadUrl, downloadUrl } = presignData.data
+
       await axios.put(uploadUrl, file, {
         headers: { 'Content-Type': file.type },
         withCredentials: false,
       })
-      // Persist the gallery URL to the backend
+
       const { data: updatedProfile } = await profileApi.addGalleryPhoto(downloadUrl)
       qc.setQueryData(['profile', 'me'], updatedProfile.data)
       set('galleryUrls', updatedProfile.data.galleryUrls)
       toast.success('Gallery photo added!')
-    } catch {
-      toast.error('Gallery upload failed. Please try again.')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Unknown error'
+      toast.error(`Gallery upload failed: ${msg}`)
     } finally {
       setUploadingGallery(false)
       if (galleryInputRef.current) galleryInputRef.current.value = ''

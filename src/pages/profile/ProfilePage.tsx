@@ -212,10 +212,20 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {profile.aboutMe && (
-        <div className="card p-5">
-          <h2 className="font-semibold text-gray-900 mb-2">About</h2>
-          <p className="text-gray-600 text-sm leading-relaxed">{profile.aboutMe}</p>
+      {(profile.aboutMe || profile.partnerExpectations) && (
+        <div className="card p-5 space-y-4">
+          {profile.aboutMe && (
+            <div>
+              <h2 className="font-semibold text-gray-900 mb-1">About Me</h2>
+              <p className="text-gray-600 text-sm leading-relaxed">{profile.aboutMe}</p>
+            </div>
+          )}
+          {profile.partnerExpectations && (
+            <div>
+              <h2 className="font-semibold text-gray-900 mb-1">Partner Expectations</h2>
+              <p className="text-gray-600 text-sm leading-relaxed">{profile.partnerExpectations}</p>
+            </div>
+          )}
         </div>
       )}
 
