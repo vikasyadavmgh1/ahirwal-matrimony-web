@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Camera, ChevronLeft, Save, Sparkles } from 'lucide-react'
+import { Camera, ChevronLeft, Images, Save, Sparkles, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import axios from 'axios'
 import { profileApi } from '../../api/profile'
@@ -13,35 +13,80 @@ export default function EditProfilePage() {
   const [searchParams] = useSearchParams()
   const isNewUser = searchParams.get('new') === '1'
   const qc = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Avatar upload
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+  // Gallery upload
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return }
 
-    setUploadingPhoto(true)
+    setUploadingAvatar(true)
     try {
-      // Get presigned URL from backend (pass file MIME type so backend picks right extension)
       const { data: presignData } = await profileApi.avatarPresignedUrl(file.type)
       const { uploadUrl, downloadUrl } = presignData.data
-
-      // Upload directly to S3 (no auth header — presigned URL handles auth)
       await axios.put(uploadUrl, file, {
         headers: { 'Content-Type': file.type },
         withCredentials: false,
       })
-
-      // Save the avatar URL on the profile
       set('avatarUrl', downloadUrl)
       toast.success('Photo uploaded! Save profile to confirm.')
     } catch {
       toast.error('Photo upload failed. Please try again.')
     } finally {
-      setUploadingPhoto(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      setUploadingAvatar(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
+
+  const handleGallerySelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return }
+
+    const currentGallery = form.galleryUrls ?? []
+    if (currentGallery.length >= 5) {
+      toast.error('Maximum 5 gallery photos allowed')
+      return
+    }
+
+    setUploadingGallery(true)
+    try {
+      const { data: presignData } = await profileApi.galleryPresignedUrl(file.type)
+      const { uploadUrl, downloadUrl } = presignData.data
+      await axios.put(uploadUrl, file, {
+        headers: { 'Content-Type': file.type },
+        withCredentials: false,
+      })
+      // Persist the gallery URL to the backend
+      const { data: updatedProfile } = await profileApi.addGalleryPhoto(downloadUrl)
+      qc.setQueryData(['profile', 'me'], updatedProfile.data)
+      set('galleryUrls', updatedProfile.data.galleryUrls)
+      toast.success('Gallery photo added!')
+    } catch {
+      toast.error('Gallery upload failed. Please try again.')
+    } finally {
+      setUploadingGallery(false)
+      if (galleryInputRef.current) galleryInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveGalleryPhoto = async (index: number) => {
+    try {
+      const { data: updatedProfile } = await profileApi.removeGalleryPhoto(index)
+      qc.setQueryData(['profile', 'me'], updatedProfile.data)
+      set('galleryUrls', updatedProfile.data.galleryUrls)
+      toast.success('Photo removed')
+    } catch {
+      toast.error('Failed to remove photo')
     }
   }
 
@@ -64,11 +109,11 @@ export default function EditProfilePage() {
   const set = <K extends keyof ProfileDTO>(k: K, v: ProfileDTO[K]) =>
     setForm((f) => ({ ...f, [k]: v }))
 
-  // Backend expects gotraId/prefMotherGotraId as plain UUID strings, not full objects
+  // Backend expects gotraId as plain UUID string
   const buildPayload = () => ({
     ...form,
-    gotraId: (form.gotraId as any)?.id ?? form.gotraId ?? null,
-    prefMotherGotraId: (form.prefMotherGotraId as any)?.id ?? form.prefMotherGotraId ?? null,
+    gotraId: form.gotraId ?? null,
+    prefMotherGotraId: form.prefMotherGotraId ?? null,
   })
 
   const saveMut = useMutation({
@@ -80,7 +125,6 @@ export default function EditProfilePage() {
     },
     onSuccess: (savedProfile) => {
       toast.success('Profile saved!')
-      // Set cache directly so profile page shows immediately without a re-fetch lag
       qc.setQueryData(['profile', 'me'], savedProfile)
       qc.invalidateQueries({ queryKey: ['profile'] })
       navigate(isNewUser ? '/dashboard' : '/profile')
@@ -93,7 +137,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      {/* New user welcome banner */}
       {isNewUser && (
         <div className="bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl p-4 mb-5 flex items-start gap-3">
           <Sparkles size={20} className="flex-shrink-0 mt-0.5" />
@@ -119,11 +162,10 @@ export default function EditProfilePage() {
         onSubmit={(e) => { e.preventDefault(); saveMut.mutate() }}
         className="space-y-5"
       >
-        {/* Photo upload */}
+        {/* Profile Photo */}
         <div className="card p-5">
           <h2 className="font-semibold text-gray-900 mb-3">Profile Photo <span className="text-gray-400 font-normal text-sm">(optional)</span></h2>
           <div className="flex items-center gap-4">
-            {/* Avatar preview */}
             <div className="w-20 h-20 rounded-full bg-primary-100 flex-shrink-0 overflow-hidden border-2 border-primary-200">
               {form.avatarUrl
                 ? <img src={form.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
@@ -134,24 +176,68 @@ export default function EditProfilePage() {
             </div>
             <div>
               <input
-                ref={fileInputRef}
+                ref={avatarInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
-                onChange={handlePhotoSelect}
+                onChange={handleAvatarSelect}
               />
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingPhoto}
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
                 className="btn-secondary flex items-center gap-2 text-sm py-2 px-4"
               >
                 <Camera size={15} />
-                {uploadingPhoto ? 'Uploading…' : form.avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                {uploadingAvatar ? 'Uploading…' : form.avatarUrl ? 'Change Photo' : 'Upload Photo'}
               </button>
               <p className="text-xs text-gray-400 mt-1.5">JPG, PNG or WebP · Max 5 MB</p>
             </div>
           </div>
+        </div>
+
+        {/* Gallery Photos */}
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-900 mb-1">Photo Gallery <span className="text-gray-400 font-normal text-sm">(up to 5 photos)</span></h2>
+          <p className="text-xs text-gray-400 mb-3">Add more photos to improve your profile visibility</p>
+          <div className="grid grid-cols-3 gap-3">
+            {(form.galleryUrls ?? []).map((url, idx) => (
+              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                <img src={url} alt={`gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveGalleryPhoto(idx)}
+                  className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            {(form.galleryUrls ?? []).length < 5 && (
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                disabled={uploadingGallery}
+                className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary-400 hover:text-primary-500 transition-colors"
+              >
+                {uploadingGallery ? (
+                  <span className="text-xs">Uploading…</span>
+                ) : (
+                  <>
+                    <Images size={20} />
+                    <span className="text-xs">Add Photo</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleGallerySelect}
+          />
         </div>
 
         {/* Basic */}
@@ -203,10 +289,11 @@ export default function EditProfilePage() {
           <h2 className="font-semibold text-gray-900">Gotra & Community</h2>
 
           <Field label="Gotra">
-            <select className="input" value={(form.gotraId as any)?.id ?? ''} onChange={(e) => {
-              const g = gotras?.find((g) => g.id === e.target.value)
-              set('gotraId', g as any)
-            }}>
+            <select
+              className="input"
+              value={form.gotraId ?? ''}
+              onChange={(e) => set('gotraId', e.target.value || null as any)}
+            >
               <option value="">Select Gotra</option>
               {gotras?.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}{g.nameHindi ? ` (${g.nameHindi})` : ''}</option>
@@ -260,8 +347,12 @@ export default function EditProfilePage() {
             </select>
           </Field>
 
-          <Field label="Job Title / Role / Company">
-            <input className="input" value={form.occupationDetail ?? ''} onChange={(e) => set('occupationDetail', e.target.value)} placeholder="e.g., Software Engineer at TCS, Constable, Own shop" />
+          <Field label="Job Title / Role">
+            <input className="input" value={form.occupationDetail ?? ''} onChange={(e) => set('occupationDetail', e.target.value)} placeholder="e.g., Software Engineer, Inspector, Doctor" />
+          </Field>
+
+          <Field label="Company / Organization">
+            <input className="input" value={form.companyName ?? ''} onChange={(e) => set('companyName', e.target.value)} placeholder="e.g., TCS, CRPF, Self-employed" />
           </Field>
 
           <Field label="Annual Income (LPA)">
@@ -273,9 +364,6 @@ export default function EditProfilePage() {
         <div className="card p-5 space-y-4">
           <h2 className="font-semibold text-gray-900">Physical Details</h2>
           <div className="grid grid-cols-2 gap-4">
-            {/* Height: ft/in display, cm stored.
-                Fix: use Math.round(cm/2.54) to get total inches first,
-                then split — avoids float rounding making 5ft→4ft */}
             <Field label="Height">
               {(() => {
                 const totalIn = form.heightCm ? Math.round(form.heightCm / 2.54) : null
@@ -324,12 +412,16 @@ export default function EditProfilePage() {
 
         {/* About */}
         <div className="card p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">About & Expectations</h2>
+          <h2 className="font-semibold text-gray-900">About Me</h2>
           <Field label="About Me">
             <textarea className="input" rows={3} value={form.aboutMe ?? ''} onChange={(e) => set('aboutMe', e.target.value)} placeholder="Tell about yourself..." />
           </Field>
-          <Field label="Partner Expectations">
-            <textarea className="input" rows={3} value={form.partnerExpectations ?? ''} onChange={(e) => set('partnerExpectations', e.target.value)} placeholder="What you're looking for..." />
+        </div>
+
+        <div className="card p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">Partner Expectations</h2>
+          <Field label="What you're looking for">
+            <textarea className="input" rows={3} value={form.partnerExpectations ?? ''} onChange={(e) => set('partnerExpectations', e.target.value)} placeholder="Describe your ideal partner..." />
           </Field>
         </div>
 

@@ -92,12 +92,12 @@ export default function ProfilePage() {
             </div>
           )}
           <div className="absolute bottom-3 right-3 flex gap-2">
-            {profile.premium && (
+            {profile.isPremium && (
               <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                 <Crown size={12} /> Premium
               </span>
             )}
-            {profile.verified && (
+            {profile.isVerified && (
               <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                 <Shield size={12} /> Verified
               </span>
@@ -197,10 +197,10 @@ export default function ProfilePage() {
       <div className="card p-5 space-y-3">
         <h2 className="font-semibold text-gray-900">Basic Details</h2>
         {[
-          { icon: MapPin, label: 'Location', value: [profile.nativeLocationId?.district, profile.nativeLocationId?.state].filter(Boolean).join(', ') || null },
+          { icon: MapPin, label: 'Location', value: [profile.nativeDistrict, profile.nativeState].filter(Boolean).join(', ') || null },
           { icon: GraduationCap, label: 'Education', value: profile.educationLevel?.replace(/_/g, ' ') ?? null },
           { icon: Briefcase, label: 'Occupation', value: profile.occupation?.replace(/_/g, ' ') ?? null },
-          { icon: Heart, label: 'Gotra', value: profile.gotraId?.name ?? null },
+          { icon: Heart, label: 'Gotra', value: profile.gotraName ?? null },
         ].map(({ icon: Icon, label, value }) =>
           value ? (
             <div key={label} className="flex items-center gap-3 text-sm">

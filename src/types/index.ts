@@ -40,11 +40,14 @@ export interface ProfileDTO {
   fullNameHindi: string | null
   gender: Gender | null
   dateOfBirth: string | null
+  age: number
   profileFor: string
-  gotraId: Gotra | null
+  gotraId: string | null
+  gotraName: string | null
   kuldevi: string | null
-  nativeLocationId: Location | null
-  currentLocationId: Location | null
+  nativeDistrict: string | null
+  nativeTehsil: string | null
+  nativeState: string | null
   currentCity: string | null
   heightCm: number | null
   weightKg: number | null
@@ -55,6 +58,7 @@ export interface ProfileDTO {
   educationDetail: string | null
   occupation: Occupation | null
   occupationDetail: string | null
+  companyName: string | null
   annualIncomeLpa: number | null
   fatherName: string | null
   fatherOccupation: string | null
@@ -70,6 +74,13 @@ export interface ProfileDTO {
   diet: string
   smoking: string
   drinking: string
+  maritalStatus: MatrimonialStatus
+  aboutMe: string | null
+  partnerExpectations: string | null
+  avatarUrl: string | null
+  avatarApproved: boolean
+  galleryUrls: string[] | null
+  videoUrl: string | null
   prefMinAge: number | null
   prefMaxAge: number | null
   prefMinHeightCm: number | null
@@ -77,22 +88,15 @@ export interface ProfileDTO {
   prefEducation: EducationLevel | null
   prefOccupation: string[] | null
   prefDistricts: string[] | null
-  prefMotherGotraId: Gotra | null
+  prefMotherGotraId: string | null
   prefExcludeMotherGotra: boolean
-  aboutMe: string | null
-  partnerExpectations: string | null
-  avatarUrl: string | null
-  avatarApproved: boolean
-  galleryUrls: string[] | null
-  videoUrl: string | null
   profileCompletePct: number
-  verified: boolean
-  premium: boolean
+  isVerified: boolean
+  isPremium: boolean
   visibility: ProfileVisibility
-  maritalStatus: MatrimonialStatus
   lastActiveAt: string | null
-  createdAt: string
-  updatedAt: string
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 // ─── Match ────────────────────────────────────────────────────────────────────

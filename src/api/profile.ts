@@ -26,11 +26,16 @@ export const profileApi = {
       params: contentType ? { contentType } : {},
     }),
 
-  galleryPresignedUrl: () =>
-    apiClient.post<ApiResponse<PresignedUrlResponse>>('/profiles/me/gallery/presigned-url'),
+  galleryPresignedUrl: (contentType?: string) =>
+    apiClient.post<ApiResponse<PresignedUrlResponse>>('/profiles/me/gallery/presigned-url', null, {
+      params: contentType ? { contentType } : {},
+    }),
+
+  addGalleryPhoto: (photoUrl: string) =>
+    apiClient.post<ApiResponse<ProfileDTO>>('/profiles/me/gallery', { photoUrl }),
 
   removeGalleryPhoto: (index: number) =>
-    apiClient.delete<ApiResponse<string>>(`/profiles/me/gallery/${index}`),
+    apiClient.delete<ApiResponse<ProfileDTO>>(`/profiles/me/gallery/${index}`),
 
   updateVisibility: (visibility: string) =>
     apiClient.patch<ApiResponse<string>>('/profiles/me/visibility', { visibility }),
