@@ -38,8 +38,9 @@ export default function EditProfilePage() {
       })
       set('avatarUrl', downloadUrl)
       toast.success('Photo uploaded! Save profile to confirm.')
-    } catch {
-      toast.error('Photo upload failed. Please try again.')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Unknown error'
+      toast.error(`Photo upload failed: ${msg}`)
     } finally {
       setUploadingAvatar(false)
       if (avatarInputRef.current) avatarInputRef.current.value = ''
