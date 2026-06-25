@@ -45,6 +45,12 @@ export interface ProfileDTO {
   gotraId: string | null
   gotraName: string | null
   gotraCustom: string | null
+  motherGotraId: string | null
+  motherGotraName: string | null
+  motherGotraCustom: string | null
+  grandmotherGotraId: string | null
+  grandmotherGotraName: string | null
+  grandmotherGotraCustom: string | null
   kuldevi: string | null
   nativeDistrict: string | null
   nativeTehsil: string | null

@@ -97,11 +97,15 @@ export default function EditProfilePage() {
 
   const [form, setForm] = useState<Partial<ProfileDTO>>({})
   const [isCustomGotra, setIsCustomGotra] = useState(false)
+  const [isCustomMotherGotra, setIsCustomMotherGotra] = useState(false)
+  const [isCustomGrandmotherGotra, setIsCustomGrandmotherGotra] = useState(false)
 
   useEffect(() => {
     if (existingProfile) {
       setForm(existingProfile)
       setIsCustomGotra(!existingProfile.gotraId && !!existingProfile.gotraCustom)
+      setIsCustomMotherGotra(!existingProfile.motherGotraId && !!existingProfile.motherGotraCustom)
+      setIsCustomGrandmotherGotra(!existingProfile.grandmotherGotraId && !!existingProfile.grandmotherGotraCustom)
     }
   }, [existingProfile])
 
@@ -112,6 +116,10 @@ export default function EditProfilePage() {
     ...form,
     gotraId: isCustomGotra ? null : (form.gotraId ?? null),
     gotraCustom: isCustomGotra ? (form.gotraCustom ?? null) : null,
+    motherGotraId: isCustomMotherGotra ? null : (form.motherGotraId ?? null),
+    motherGotraCustom: isCustomMotherGotra ? (form.motherGotraCustom ?? null) : null,
+    grandmotherGotraId: isCustomGrandmotherGotra ? null : (form.grandmotherGotraId ?? null),
+    grandmotherGotraCustom: isCustomGrandmotherGotra ? (form.grandmotherGotraCustom ?? null) : null,
     prefMotherGotraId: form.prefMotherGotraId ?? null,
   })
 
@@ -312,36 +320,47 @@ export default function EditProfilePage() {
             <h2 className="font-semibold text-gray-900 text-sm">Gotra & Community</h2>
           </div>
           <div className="section-body">
-            <Field label="Gotra">
-              <select
-                className="input"
-                value={isCustomGotra ? '__custom__' : (form.gotraId ?? '')}
-                onChange={(e) => {
-                  if (e.target.value === '__custom__') {
-                    setIsCustomGotra(true)
-                    set('gotraId', null as any)
-                  } else {
-                    setIsCustomGotra(false)
-                    set('gotraCustom', null as any)
-                    set('gotraId', e.target.value || null as any)
-                  }
+            <Field label="Your Gotra">
+              <GotraPicker
+                label="Your Gotra"
+                gotras={gotras}
+                selectedId={isCustomGotra ? '__custom__' : (form.gotraId ?? '')}
+                customValue={form.gotraCustom ?? ''}
+                isCustom={isCustomGotra}
+                onSelect={(val) => {
+                  if (val === '__custom__') { setIsCustomGotra(true); set('gotraId', null as any) }
+                  else { setIsCustomGotra(false); set('gotraCustom', null as any); set('gotraId', val || null as any) }
                 }}
-              >
-                <option value="">Select Gotra</option>
-                {gotras?.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}{g.nameHindi ? ` (${g.nameHindi})` : ''}</option>
-                ))}
-                <option value="__custom__">Other (not in list)</option>
-              </select>
-              {isCustomGotra && (
-                <input
-                  className="input mt-2"
-                  value={form.gotraCustom ?? ''}
-                  onChange={(e) => set('gotraCustom', e.target.value || null as any)}
-                  placeholder="Enter your gotra name"
-                  autoFocus
-                />
-              )}
+                onCustomChange={(val) => set('gotraCustom', val || null as any)}
+              />
+            </Field>
+            <Field label="Mother's Gotra">
+              <GotraPicker
+                label="Mother's Gotra"
+                gotras={gotras}
+                selectedId={isCustomMotherGotra ? '__custom__' : (form.motherGotraId ?? '')}
+                customValue={form.motherGotraCustom ?? ''}
+                isCustom={isCustomMotherGotra}
+                onSelect={(val) => {
+                  if (val === '__custom__') { setIsCustomMotherGotra(true); set('motherGotraId', null as any) }
+                  else { setIsCustomMotherGotra(false); set('motherGotraCustom', null as any); set('motherGotraId', val || null as any) }
+                }}
+                onCustomChange={(val) => set('motherGotraCustom', val || null as any)}
+              />
+            </Field>
+            <Field label="Grandmother's Gotra">
+              <GotraPicker
+                label="Grandmother's Gotra"
+                gotras={gotras}
+                selectedId={isCustomGrandmotherGotra ? '__custom__' : (form.grandmotherGotraId ?? '')}
+                customValue={form.grandmotherGotraCustom ?? ''}
+                isCustom={isCustomGrandmotherGotra}
+                onSelect={(val) => {
+                  if (val === '__custom__') { setIsCustomGrandmotherGotra(true); set('grandmotherGotraId', null as any) }
+                  else { setIsCustomGrandmotherGotra(false); set('grandmotherGotraCustom', null as any); set('grandmotherGotraId', val || null as any) }
+                }}
+                onCustomChange={(val) => set('grandmotherGotraCustom', val || null as any)}
+              />
             </Field>
             <Field label="Kuldevi" optional>
               <input className="input" value={form.kuldevi ?? ''} onChange={(e) => set('kuldevi', e.target.value)} placeholder="e.g., Shila Mata, Bala Sundari" />
@@ -564,5 +583,38 @@ function Field({ label, children, optional }: { label: string; children: React.R
       </label>
       {children}
     </div>
+  )
+}
+
+interface GotraPickerProps {
+  label: string
+  gotras: { id: string; name: string; nameHindi: string | null }[] | undefined
+  selectedId: string
+  customValue: string
+  isCustom: boolean
+  onSelect: (val: string) => void
+  onCustomChange: (val: string) => void
+}
+
+function GotraPicker({ gotras, selectedId, customValue, isCustom, onSelect, onCustomChange }: GotraPickerProps) {
+  return (
+    <>
+      <select className="input" value={selectedId} onChange={(e) => onSelect(e.target.value)}>
+        <option value="">Select Gotra</option>
+        {gotras?.map((g) => (
+          <option key={g.id} value={g.id}>{g.name}</option>
+        ))}
+        <option value="__custom__">Other (not in list)</option>
+      </select>
+      {isCustom && (
+        <input
+          className="input mt-2"
+          value={customValue}
+          onChange={(e) => onCustomChange(e.target.value)}
+          placeholder="Enter gotra name"
+          autoFocus
+        />
+      )}
+    </>
   )
 }
