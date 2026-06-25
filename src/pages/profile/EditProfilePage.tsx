@@ -113,18 +113,22 @@ export default function EditProfilePage() {
   })
 
   const [form, setForm] = useState<Partial<ProfileDTO>>({})
+  const [isCustomGotra, setIsCustomGotra] = useState(false)
 
   useEffect(() => {
-    if (existingProfile) setForm(existingProfile)
+    if (existingProfile) {
+      setForm(existingProfile)
+      setIsCustomGotra(!existingProfile.gotraId && !!existingProfile.gotraCustom)
+    }
   }, [existingProfile])
 
   const set = <K extends keyof ProfileDTO>(k: K, v: ProfileDTO[K]) =>
     setForm((f) => ({ ...f, [k]: v }))
 
-  // Backend expects gotraId as plain UUID string
   const buildPayload = () => ({
     ...form,
-    gotraId: form.gotraId ?? null,
+    gotraId: isCustomGotra ? null : (form.gotraId ?? null),
+    gotraCustom: isCustomGotra ? (form.gotraCustom ?? null) : null,
     prefMotherGotraId: form.prefMotherGotraId ?? null,
   })
 
@@ -303,14 +307,33 @@ export default function EditProfilePage() {
           <Field label="Gotra">
             <select
               className="input"
-              value={form.gotraId ?? ''}
-              onChange={(e) => set('gotraId', e.target.value || null as any)}
+              value={isCustomGotra ? '__custom__' : (form.gotraId ?? '')}
+              onChange={(e) => {
+                if (e.target.value === '__custom__') {
+                  setIsCustomGotra(true)
+                  set('gotraId', null as any)
+                } else {
+                  setIsCustomGotra(false)
+                  set('gotraCustom', null as any)
+                  set('gotraId', e.target.value || null as any)
+                }
+              }}
             >
               <option value="">Select Gotra</option>
               {gotras?.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}{g.nameHindi ? ` (${g.nameHindi})` : ''}</option>
               ))}
+              <option value="__custom__">Other (not in list)</option>
             </select>
+            {isCustomGotra && (
+              <input
+                className="input mt-2"
+                value={form.gotraCustom ?? ''}
+                onChange={(e) => set('gotraCustom', e.target.value || null as any)}
+                placeholder="Enter your gotra name"
+                autoFocus
+              />
+            )}
           </Field>
 
           <Field label="Manglik">
@@ -319,6 +342,19 @@ export default function EditProfilePage() {
               <option value="YES">Yes</option>
               <option value="PARTIAL">Partial</option>
             </select>
+          </Field>
+        </div>
+
+        {/* Location */}
+        <div className="card p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">Location</h2>
+
+          <Field label="Current City">
+            <input className="input" value={form.currentCity ?? ''} onChange={(e) => set('currentCity', e.target.value)} placeholder="e.g., Rewari, Gurugram, Delhi" />
+          </Field>
+
+          <Field label="Address">
+            <textarea className="input" rows={3} value={form.address ?? ''} onChange={(e) => set('address', e.target.value)} placeholder="House no., street, village, tehsil…" />
           </Field>
         </div>
 

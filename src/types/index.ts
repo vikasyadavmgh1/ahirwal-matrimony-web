@@ -44,11 +44,13 @@ export interface ProfileDTO {
   profileFor: string
   gotraId: string | null
   gotraName: string | null
+  gotraCustom: string | null
   kuldevi: string | null
   nativeDistrict: string | null
   nativeTehsil: string | null
   nativeState: string | null
   currentCity: string | null
+  address: string | null
   heightCm: number | null
   weightKg: number | null
   complexion: string
