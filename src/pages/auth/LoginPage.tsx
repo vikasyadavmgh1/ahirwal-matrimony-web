@@ -105,21 +105,21 @@ export default function LoginPage() {
 
           {/* Desktop heading */}
           <div className="hidden md:block mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Sign in</h2>
-            <p className="text-gray-500 text-sm mt-1">Find your perfect match within the community</p>
+            <h2 className="text-3xl font-black text-gray-900">Sign in</h2>
+            <p className="text-gray-500 text-sm mt-1.5">Find your perfect match within the Ahirwal community</p>
           </div>
 
           {step === 'phone' ? (
             <form onSubmit={handleSendOtp} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Mobile Number</label>
-                <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-gray-50 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-400/20 transition-all">
-                  <span className="inline-flex items-center px-4 bg-gray-100 text-gray-500 text-sm font-medium border-r border-gray-200 flex-shrink-0">
+                <div className="flex rounded-2xl overflow-hidden border-2 border-gray-200 bg-white focus-within:border-primary-400 focus-within:ring-4 focus-within:ring-primary-100 transition-all shadow-soft">
+                  <span className="inline-flex items-center px-4 bg-gray-50 text-gray-500 text-sm font-bold border-r-2 border-gray-200 flex-shrink-0">
                     +91
                   </span>
                   <input
                     type="tel"
-                    className="flex-1 bg-transparent px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
+                    className="flex-1 bg-transparent px-4 py-3.5 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none"
                     placeholder="10-digit mobile number"
                     value={phone.replace('+91', '')}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
