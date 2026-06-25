@@ -131,14 +131,8 @@ export interface InterestResponse {
 }
 
 // ─── Shortlist ────────────────────────────────────────────────────────────────
-export interface ShortlistEntry {
-  profileId: string
-  fullName: string | null
-  avatarUrl: string | null
-  age: number | null
-  district: string | null
-  shortlistedAt: string
-}
+// API returns full ProfileDTO objects for each shortlisted profile
+export type ShortlistEntry = ProfileDTO
 
 // ─── Subscription ─────────────────────────────────────────────────────────────
 export interface PlanDTO {

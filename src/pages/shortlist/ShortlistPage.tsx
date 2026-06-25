@@ -52,13 +52,14 @@ export default function ShortlistPage() {
       ) : data?.length ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {data.map((entry) => {
+            // API returns full ProfileDTO — use entry.id (not profileId), entry.nativeDistrict (not district)
             const initial = entry.fullName?.charAt(0)?.toUpperCase() ?? '?'
             const gradient = getAvatarGradient(entry.fullName ?? '?')
             return (
-              <div key={entry.profileId} className="card rounded-2xl overflow-hidden relative group">
+              <div key={entry.id} className="card rounded-2xl overflow-hidden relative group">
                 {/* Remove button */}
                 <button
-                  onClick={() => removeMut.mutate(entry.profileId)}
+                  onClick={() => removeMut.mutate(entry.id)}
                   className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
                   title="Remove from shortlist"
                 >
@@ -81,17 +82,17 @@ export default function ShortlistPage() {
                 {/* Info */}
                 <div className="p-3">
                   <Link
-                    to={`/profile/${entry.profileId}`}
+                    to={`/profile/${entry.id}`}
                     className="block font-semibold text-gray-900 text-sm hover:text-primary-600 truncate"
                   >
                     {entry.fullName ?? 'Profile'}
                   </Link>
                   <div className="text-xs text-gray-500 flex flex-wrap gap-x-2 mt-0.5">
-                    {entry.age && <span>{entry.age} yrs</span>}
-                    {entry.district && (
+                    {entry.age > 0 && <span>{entry.age} yrs</span>}
+                    {entry.nativeDistrict && (
                       <span className="flex items-center gap-0.5">
                         <MapPin size={10} />
-                        {entry.district}
+                        {entry.nativeDistrict}
                       </span>
                     )}
                   </div>
