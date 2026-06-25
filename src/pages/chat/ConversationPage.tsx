@@ -5,12 +5,22 @@ import { ChevronLeft, Send } from 'lucide-react'
 import { apiClient } from '../../api/client'
 import type { ApiResponse, ChatMessage } from '../../types'
 import { useAuthStore } from '../../store/authStore'
-import { formatDistanceToNow } from '../../utils/date'
+import { formatTime } from '../../utils/date'
+import { profileApi } from '../../api/profile'
 
 export default function ConversationPage() {
   const { conversationId } = useParams<{ conversationId: string }>()
   const navigate = useNavigate()
-  const { userId } = useAuthStore()
+  const { userId: storedUserId } = useAuthStore()
+
+  // Fallback: if userId not in store (old session before fix), fetch from profile
+  const { data: myProfile } = useQuery({
+    queryKey: ['profile', 'me'],
+    queryFn: () => profileApi.getMyProfile().then((r) => r.data.data).catch(() => null),
+    enabled: !storedUserId,
+    staleTime: Infinity,
+  })
+  const userId = storedUserId ?? myProfile?.userId
   const qc = useQueryClient()
   const [text, setText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -88,7 +98,7 @@ export default function ConversationPage() {
                 }`}>
                   <p>{msg.content}</p>
                   <p className={`text-[10px] mt-1 ${isMine ? 'text-primary-200' : 'text-gray-400'}`}>
-                    {formatDistanceToNow(msg.sentAt)}
+                    {formatTime(msg.sentAt)}
                   </p>
                 </div>
               </div>
