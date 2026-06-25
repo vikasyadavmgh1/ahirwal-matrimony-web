@@ -26,7 +26,7 @@ export default function MatchesPage() {
   })
 
   const filtered = matches?.filter(
-    (m) => !searchName || m.fullName?.toLowerCase().includes(searchName.toLowerCase())
+    (m) => !searchName || m.profile.fullName?.toLowerCase().includes(searchName.toLowerCase())
   )
 
   return (
@@ -82,7 +82,7 @@ export default function MatchesPage() {
       ) : filtered?.length ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filtered.map((m) => (
-            <ProfileCard key={m.profileId} match={m} />
+            <ProfileCard key={m.profile.id} match={m} />
           ))}
         </div>
       ) : (

@@ -94,7 +94,7 @@ export default function DashboardPage() {
           ) : suggestions?.length ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {suggestions.map((match) => (
-                <ProfileCard key={match.profileId} match={match} />
+                <ProfileCard key={match.profile.id} match={match} />
               ))}
             </div>
           ) : (

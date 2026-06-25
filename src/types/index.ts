@@ -110,20 +110,9 @@ export interface ProfileDTO {
 
 // ─── Match ────────────────────────────────────────────────────────────────────
 export interface MatchResultDTO {
-  profileId: string
-  userId: string
-  fullName: string | null
-  age: number | null
-  district: string | null
-  gotraName: string | null
-  occupation: string | null
-  educationLevel: string | null
-  avatarUrl: string | null
-  isPremium: boolean
-  isVerified: boolean
-  profileCompletePct: number
-  score: number
-  lastActiveAt: string | null
+  profile: ProfileDTO
+  matchScore: number
+  matchedFields: string[]
 }
 
 // ─── Interest ─────────────────────────────────────────────────────────────────
