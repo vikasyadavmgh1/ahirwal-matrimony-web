@@ -49,6 +49,7 @@ export interface ProfileDTO {
   nativeDistrict: string | null
   nativeTehsil: string | null
   nativeState: string | null
+  nativeVillage: string | null
   currentCity: string | null
   address: string | null
   heightCm: number | null
