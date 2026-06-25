@@ -52,4 +52,36 @@
   .section-body {
     @apply p-5 space-y-4;
   }
+
+  .tab-bar {
+    @apply flex bg-gray-100 p-1 rounded-xl gap-1;
+  }
+
+  .tab-btn {
+    @apply flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200;
+  }
+
+  .tab-active {
+    @apply bg-white text-primary-600 shadow-sm font-semibold;
+  }
+
+  .tab-inactive {
+    @apply text-gray-500 hover:text-gray-800;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full;
+  }
+
+  .badge-pending {
+    @apply bg-amber-50 text-amber-700 border border-amber-200;
+  }
+
+  .badge-accepted {
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+
+  .badge-declined {
+    @apply bg-red-50 text-red-600 border border-red-200;
+  }
 }

@@ -37,11 +37,11 @@ export default function Layout() {
       {/* Sidebar (desktop) */}
       <aside className="hidden md:flex w-60 flex-col bg-white border-r border-gray-100 fixed h-full z-20">
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-gray-100">
-          <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center">
+        <div className="flex items-center gap-2.5 px-4 py-4 bg-gradient-to-r from-primary-600 to-primary-700">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
             <Heart className="w-4 h-4 text-white fill-white" />
           </div>
-          <span className="font-bold text-gray-900 text-sm">Ahirwal Matrimony</span>
+          <span className="font-bold text-white text-sm">Ahirwal Matrimony</span>
         </div>
 
         {/* Nav */}
@@ -54,12 +54,12 @@ export default function Layout() {
                 clsx(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
+                    ? 'bg-primary-50 text-primary-700 font-semibold border-l-2 border-primary-500 pl-[10px]'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 )
               }
             >
-              <Icon className="w-4.5 h-4.5 flex-shrink-0" size={18} />
+              <Icon className="flex-shrink-0" size={18} />
               {label}
             </NavLink>
           ))}
@@ -90,13 +90,20 @@ export default function Layout() {
             to={to}
             className={({ isActive }) =>
               clsx(
-                'flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors',
-                isActive ? 'text-primary-600' : 'text-gray-500'
+                'flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors relative',
+                isActive ? 'text-primary-600' : 'text-gray-400'
               )
             }
           >
-            <Icon size={20} />
-            <span>{label}</span>
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary-500" />
+                )}
+                <Icon size={20} />
+                <span>{label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

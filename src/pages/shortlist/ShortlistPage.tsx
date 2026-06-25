@@ -1,8 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, MapPin } from 'lucide-react'
+import { Trash2, MapPin, BookHeart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { shortlistApi } from '../../api/shortlist'
+
+// Gradient combos for avatar backgrounds
+const avatarGradients = [
+  'bg-gradient-to-br from-pink-400 to-rose-500',
+  'bg-gradient-to-br from-violet-400 to-purple-500',
+  'bg-gradient-to-br from-blue-400 to-indigo-500',
+  'bg-gradient-to-br from-emerald-400 to-teal-500',
+  'bg-gradient-to-br from-amber-400 to-orange-500',
+]
+
+function getAvatarGradient(name: string) {
+  return avatarGradients[(name.charCodeAt(0) ?? 0) % 5]
+}
 
 export default function ShortlistPage() {
   const qc = useQueryClient()
@@ -20,49 +33,83 @@ export default function ShortlistPage() {
   })
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold text-gray-900 mb-5">
-        Shortlisted ({data?.length ?? 0})
-      </h1>
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="flex items-center gap-2.5 mb-6">
+        <h1 className="text-xl font-bold text-gray-900">Shortlisted</h1>
+        {data?.length != null && (
+          <span className="text-xs font-semibold bg-primary-50 text-primary-600 px-2.5 py-1 rounded-full">
+            {data.length}
+          </span>
+        )}
+      </div>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="card h-20 animate-pulse" />)}
-        </div>
-      ) : data?.length ? (
-        <div className="space-y-3">
-          {data.map((entry) => (
-            <div key={entry.profileId} className="card p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary-100 flex-shrink-0 overflow-hidden">
-                {entry.avatarUrl
-                  ? <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-primary-600 font-bold">
-                      {entry.fullName?.charAt(0) ?? '?'}
-                    </div>
-                }
-              </div>
-              <div className="flex-1 min-w-0">
-                <Link to={`/profile/${entry.profileId}`} className="font-medium text-gray-900 hover:text-primary-600 text-sm">
-                  {entry.fullName ?? 'Profile'}
-                </Link>
-                <div className="text-xs text-gray-500 flex gap-3 mt-0.5">
-                  {entry.age && <span>{entry.age} yrs</span>}
-                  {entry.district && <span className="flex items-center gap-0.5"><MapPin size={10} />{entry.district}</span>}
-                </div>
-              </div>
-              <button
-                onClick={() => removeMut.mutate(entry.profileId)}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="card h-44 animate-pulse bg-gray-100 rounded-2xl" />
           ))}
         </div>
+      ) : data?.length ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {data.map((entry) => {
+            const initial = entry.fullName?.charAt(0)?.toUpperCase() ?? '?'
+            const gradient = getAvatarGradient(entry.fullName ?? '?')
+            return (
+              <div key={entry.profileId} className="card rounded-2xl overflow-hidden relative group">
+                {/* Remove button */}
+                <button
+                  onClick={() => removeMut.mutate(entry.profileId)}
+                  className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
+                  title="Remove from shortlist"
+                >
+                  <Trash2 size={14} />
+                </button>
+
+                {/* Avatar area */}
+                <div className={`h-32 flex items-center justify-center ${gradient}`}>
+                  {entry.avatarUrl ? (
+                    <img
+                      src={entry.avatarUrl}
+                      alt={entry.fullName ?? ''}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-3xl">{initial}</span>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="p-3">
+                  <Link
+                    to={`/profile/${entry.profileId}`}
+                    className="block font-semibold text-gray-900 text-sm hover:text-primary-600 truncate"
+                  >
+                    {entry.fullName ?? 'Profile'}
+                  </Link>
+                  <div className="text-xs text-gray-500 flex flex-wrap gap-x-2 mt-0.5">
+                    {entry.age && <span>{entry.age} yrs</span>}
+                    {entry.district && (
+                      <span className="flex items-center gap-0.5">
+                        <MapPin size={10} />
+                        {entry.district}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       ) : (
-        <div className="text-center py-16 text-gray-500">
-          <p>No profiles shortlisted yet</p>
-          <Link to="/matches" className="btn-primary mt-4 inline-block">Browse Matches</Link>
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+          <div className="w-14 h-14 rounded-full bg-rose-50 flex items-center justify-center">
+            <BookHeart size={24} className="text-rose-300" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">No profiles shortlisted yet</p>
+          <p className="text-xs text-gray-400">Save profiles you like to revisit them later</p>
+          <Link to="/matches" className="btn-primary mt-2 inline-block text-sm">
+            Browse Matches
+          </Link>
         </div>
       )}
     </div>
