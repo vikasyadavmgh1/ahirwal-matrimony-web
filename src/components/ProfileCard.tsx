@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, GraduationCap, Shield, Crown, Heart } from 'lucide-react'
 import type { MatchResultDTO } from '../types'
+import { shortlistApi } from '../api/shortlist'
 
 interface Props {
   match: MatchResultDTO
@@ -9,6 +11,25 @@ interface Props {
 export default function ProfileCard({ match }: Props) {
   const p = match.profile
   const initial = p.fullName?.charAt(0)?.toUpperCase() ?? '?'
+  const [shortlisted, setShortlisted] = useState(false)
+  const [slLoading, setSlLoading] = useState(false)
+
+  const handleShortlist = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (slLoading) return
+    setSlLoading(true)
+    try {
+      if (shortlisted) {
+        await shortlistApi.remove(p.id)
+        setShortlisted(false)
+      } else {
+        await shortlistApi.add(p.id)
+        setShortlisted(true)
+      }
+    } catch { /* ignore */ }
+    setSlLoading(false)
+  }
 
   return (
     <Link
@@ -43,10 +64,14 @@ export default function ProfileCard({ match }: Props) {
 
         {/* Shortlist heart top-right */}
         <button
-          onClick={(e) => e.preventDefault()}
-          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+          onClick={handleShortlist}
+          disabled={slLoading}
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors disabled:opacity-60"
         >
-          <Heart size={15} className="text-gray-400 hover:text-primary-500" />
+          <Heart
+            size={15}
+            className={shortlisted ? 'text-primary-500 fill-primary-500' : 'text-gray-400'}
+          />
         </button>
       </div>
 

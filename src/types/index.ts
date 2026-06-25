@@ -170,10 +170,10 @@ export interface ConversationDTO {
 
 export interface ChatMessage {
   id: string
-  conversationId: string
   senderId: string
   content: string
-  sentAt: string
+  type: string
+  sentAt: string        // backend field name (was createdAt, renamed to sentAt)
   readAt: string | null
 }
 
