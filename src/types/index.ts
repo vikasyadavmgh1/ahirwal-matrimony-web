@@ -33,6 +33,17 @@ export interface Location {
   state: string
 }
 
+export interface AppNotification {
+  id: string
+  userId: string
+  type: 'INTEREST_RECEIVED' | 'INTEREST_ACCEPTED' | 'MATCH_CREATED' | 'NEW_MESSAGE'
+  title: string
+  body: string | null
+  refId: string | null
+  read: boolean
+  createdAt: string
+}
+
 export interface ProfileDTO {
   id: string
   userId: string
@@ -106,6 +117,8 @@ export interface ProfileDTO {
   lastActiveAt: string | null
   createdAt: string | null
   updatedAt: string | null
+  photoPrivacy: string
+  photosPrivate: boolean
 }
 
 // ─── Match ────────────────────────────────────────────────────────────────────
@@ -123,6 +136,8 @@ export interface InterestResponse {
   senderPhone: string | null
   senderName: string | null
   receiverId: string | null
+  receiverName: string | null
+  receiverProfileId: string | null
   status: InterestStatus
   message: string | null
   matchId: string | null
@@ -163,6 +178,7 @@ export interface ConversationDTO {
   matchId: string
   otherUserName: string | null
   otherUserAvatar: string | null
+  otherUserProfileId: string | null
   lastMessage: string | null
   lastMessageAt: string | null
   unreadCount: number

@@ -1,17 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart } from 'lucide-react'
+import { Heart, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authApi } from '../../api/auth'
 import { useAuthStore } from '../../store/authStore'
 
 type Step = 'phone' | 'otp'
 
+const COMMUNITY_ACK_KEY = 'ahirwal_community_ack'
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const setTokens = useAuthStore((s) => s.setTokens)
 
   const [step, setStep] = useState<Step>('phone')
+  const [showAck, setShowAck] = useState(false)
+
+  useEffect(() => {
+    if (!sessionStorage.getItem(COMMUNITY_ACK_KEY)) {
+      setShowAck(true)
+    }
+  }, [])
+
+  const dismissAck = () => {
+    sessionStorage.setItem(COMMUNITY_ACK_KEY, '1')
+    setShowAck(false)
+  }
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
@@ -61,6 +75,44 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Community acknowledgement modal */}
+      {showAck && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center text-center gap-5">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-saffron-500 flex items-center justify-center shadow-lg">
+              <Heart className="w-8 h-8 text-white fill-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Ahirwal Matrimony</h2>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                This platform is exclusively for{' '}
+                <span className="font-semibold text-gray-800">Yadavs (Ahirs) of the Ahirwal region</span>
+                {' '}— including families from
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {['Delhi', 'Haryana', 'Rajasthan', 'NCR Region'].map((region) => (
+                <span
+                  key={region}
+                  className="inline-flex items-center gap-1 text-xs font-semibold bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full border border-primary-100"
+                >
+                  <MapPin size={10} />
+                  {region}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400">
+              By continuing, you confirm that you belong to the Ahirwal Yadav (Ahir) community.
+            </p>
+            <button
+              onClick={dismissAck}
+              className="btn-primary w-full"
+            >
+              I belong to this community
+            </button>
+          </div>
+        </div>
+      )}
       {/* Left panel — brand (desktop) / top strip (mobile) */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary-800 via-primary-700 to-saffron-500/80 md:w-2/5 h-48 md:h-auto flex-shrink-0">
         {/* Decorative circles */}

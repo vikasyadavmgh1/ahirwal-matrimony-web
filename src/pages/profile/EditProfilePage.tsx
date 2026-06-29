@@ -372,6 +372,14 @@ export default function EditProfilePage() {
                 <option value="PARTIAL">Partial</option>
               </select>
             </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Rashi" optional>
+                <input className="input" value={form.rashi ?? ''} onChange={(e) => set('rashi', e.target.value || null as any)} placeholder="e.g., Mesh, Vrishabha" />
+              </Field>
+              <Field label="Nakshatra" optional>
+                <input className="input" value={form.nakshatra ?? ''} onChange={(e) => set('nakshatra', e.target.value || null as any)} placeholder="e.g., Ashwini, Rohini" />
+              </Field>
+            </div>
           </div>
         </div>
 
@@ -540,6 +548,24 @@ export default function EditProfilePage() {
                 <input type="number" className="input" value={form.landAcres ?? ''} onChange={(e) => set('landAcres', parseFloat(e.target.value) as any)} placeholder="e.g., 5" />
               </Field>
             </div>
+          </div>
+        </div>
+
+        {/* Privacy Settings */}
+        <div className="section-card">
+          <div className="section-header bg-gradient-to-r from-gray-50 to-white">
+            <div className="section-icon bg-gray-100">
+              <User size={15} className="text-gray-500" />
+            </div>
+            <h2 className="font-semibold text-gray-900 text-sm">Privacy</h2>
+          </div>
+          <div className="section-body">
+            <Field label="Photo Visibility">
+              <select className="input" value={(form as any).photoPrivacy ?? 'PUBLIC'} onChange={(e) => set('photoPrivacy' as any, e.target.value)}>
+                <option value="PUBLIC">Public — everyone can see my photos</option>
+                <option value="INTEREST_ONLY">Hidden — only visible after interest accepted</option>
+              </select>
+            </Field>
           </div>
         </div>
 

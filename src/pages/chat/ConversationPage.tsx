@@ -1,17 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, Send } from 'lucide-react'
+import { ChevronLeft, Send, MoreVertical, UserX } from 'lucide-react'
 import { apiClient } from '../../api/client'
-import type { ApiResponse, ChatMessage } from '../../types'
+import type { ApiResponse, ChatMessage, ConversationDTO } from '../../types'
 import { useAuthStore } from '../../store/authStore'
 import { formatTime } from '../../utils/date'
 import { profileApi } from '../../api/profile'
+import toast from 'react-hot-toast'
 
 export default function ConversationPage() {
   const { conversationId } = useParams<{ conversationId: string }>()
   const navigate = useNavigate()
   const { userId: storedUserId } = useAuthStore()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // Fallback: if userId not in store (old session before fix), fetch from profile
   const { data: myProfile } = useQuery({
@@ -25,12 +27,21 @@ export default function ConversationPage() {
   const [text, setText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Fetch conversations list to get this conversation's metadata (name, avatar, profileId)
+  const { data: conversations } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: () =>
+      apiClient.get<ApiResponse<ConversationDTO[]>>('/chat').then((r) => r.data.data),
+    staleTime: 30000,
+  })
+  const convo = conversations?.find((c) => c.conversationId === conversationId)
+
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', conversationId],
     queryFn: () =>
       apiClient.get<ApiResponse<ChatMessage[]>>(`/chat/${conversationId}/messages`)
         .then((r) => r.data.data),
-    refetchInterval: 3000, // poll every 3s until WebSocket is wired
+    refetchInterval: 3000,
   })
 
   // Mark as read when opened
@@ -54,11 +65,33 @@ export default function ConversationPage() {
     },
   })
 
+  const unmatchMut = useMutation({
+    mutationFn: () => apiClient.delete(`/chat/${conversationId}`),
+    onSuccess: () => {
+      toast.success('Unmatched successfully')
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+      navigate('/chat')
+    },
+    onError: () => toast.error('Failed to unmatch'),
+  })
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim()) return
     sendMut.mutate(text.trim())
   }
+
+  const handleUnmatch = () => {
+    setMenuOpen(false)
+    if (window.confirm('Are you sure you want to unmatch? This person will no longer appear in your matches or browse.')) {
+      unmatchMut.mutate()
+    }
+  }
+
+  const otherName   = convo?.otherUserName ?? 'Match'
+  const otherAvatar = convo?.otherUserAvatar
+  const otherProfileId = convo?.otherUserProfileId
+  const initial = otherName.charAt(0).toUpperCase()
 
   return (
     <div className="flex flex-col h-screen md:h-[calc(100vh-0px)]">
@@ -67,12 +100,62 @@ export default function ConversationPage() {
         <button onClick={() => navigate('/chat')} className="text-gray-500 hover:text-gray-700">
           <ChevronLeft size={22} />
         </button>
-        <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm flex-shrink-0">
-          M
-        </div>
-        <div>
-          <p className="font-semibold text-gray-900 text-sm">Match</p>
+
+        {/* Avatar — click to open profile */}
+        {otherProfileId ? (
+          <Link to={`/profile/${otherProfileId}`} className="flex-shrink-0">
+            {otherAvatar ? (
+              <img
+                src={otherAvatar}
+                alt={otherName}
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-100"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-primary-100">
+                {initial}
+              </div>
+            )}
+          </Link>
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm flex-shrink-0">
+            {initial}
+          </div>
+        )}
+
+        {/* Name — click to open profile */}
+        <div className="flex-1 min-w-0">
+          {otherProfileId ? (
+            <Link to={`/profile/${otherProfileId}`} className="font-semibold text-gray-900 text-sm hover:text-primary-600">
+              {otherName}
+            </Link>
+          ) : (
+            <p className="font-semibold text-gray-900 text-sm">{otherName}</p>
+          )}
           <p className="text-xs text-gray-400">Active recently</p>
+        </div>
+
+        {/* Three-dot menu for unmatch */}
+        <div className="relative flex-shrink-0">
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical size={18} />
+          </button>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+              <div className="absolute right-0 top-9 z-20 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[150px]">
+                <button
+                  onClick={handleUnmatch}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <UserX size={15} />
+                  Unmatch
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

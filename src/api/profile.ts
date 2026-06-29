@@ -41,5 +41,11 @@ export const profileApi = {
     apiClient.patch<ApiResponse<string>>('/profiles/me/visibility', { visibility }),
 
   getViewers: () =>
-    apiClient.get<ApiResponse<string[]>>('/profiles/me/views'),
+    apiClient.get<ApiResponse<import('../types').ProfileDTO[]>>('/profiles/me/views'),
+
+  blockProfile: (profileId: string) =>
+    apiClient.post<ApiResponse<string>>(`/profiles/${profileId}/block`),
+
+  recordView: (profileId: string) =>
+    apiClient.post<ApiResponse<string>>(`/profiles/${profileId}/view`).catch(() => {}),
 }

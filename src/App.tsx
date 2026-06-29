@@ -14,6 +14,9 @@ import ConversationPage from './pages/chat/ConversationPage'
 import SubscriptionPage from './pages/subscription/SubscriptionPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import EditProfilePage from './pages/profile/EditProfilePage'
+import NotificationsPage from './pages/notifications/NotificationsPage'
+import ViewersPage from './pages/profile/ViewersPage'
+import AdminPage from './pages/admin/AdminPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,9 +48,12 @@ function App() {
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/chat/:conversationId" element={<ConversationPage />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />
+            <Route path="/profile/viewers" element={<ViewersPage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

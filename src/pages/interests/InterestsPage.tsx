@@ -118,9 +118,14 @@ export default function InterestsPage() {
       ) : interests?.length ? (
         <div className="space-y-3">
           {interests.map((interest) => {
-            const displayName = interest.senderName ?? interest.senderPhone ?? 'Unknown'
+            const displayName = tab === 'sent'
+              ? (interest.receiverName ?? 'Unknown')
+              : (interest.senderName ?? interest.senderPhone ?? 'Unknown')
             const initial = displayName.charAt(0).toUpperCase()
             const isAccepted = interest.status === 'ACCEPTED'
+            const profileLink = tab === 'sent'
+              ? (interest.receiverProfileId ? `/profile/${interest.receiverProfileId}` : null)
+              : null
             return (
               <div
                 key={interest.id}
@@ -128,17 +133,27 @@ export default function InterestsPage() {
                   isAccepted ? 'border-l-4 border-l-emerald-400' : ''
                 }`}
               >
-                {/* Colorful avatar */}
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg ${getAvatarGradient(displayName)}`}
-                >
-                  {initial}
-                </div>
+                {/* Colorful avatar — tappable link for sent interests */}
+                {profileLink ? (
+                  <Link to={profileLink} className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg ${getAvatarGradient(displayName)}`}>
+                    {initial}
+                  </Link>
+                ) : (
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg ${getAvatarGradient(displayName)}`}>
+                    {initial}
+                  </div>
+                )}
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900 text-sm truncate">{displayName}</p>
+                    {profileLink ? (
+                      <Link to={profileLink} className="font-semibold text-gray-900 text-sm truncate hover:text-primary-600">
+                        {displayName}
+                      </Link>
+                    ) : (
+                      <p className="font-semibold text-gray-900 text-sm truncate">{displayName}</p>
+                    )}
                     <StatusBadge status={interest.status} />
                   </div>
                   {interest.message && (
