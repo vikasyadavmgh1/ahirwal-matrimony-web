@@ -162,7 +162,6 @@ export default function ProfilePage() {
     !profile.heightCm && 'Add your height',
     !profile.educationLevel && 'Add education details',
     !profile.fatherName && 'Add family details',
-    !profile.rashi && 'Add horoscope details (Rashi)',
   ].filter(Boolean) : []
 
   return (
@@ -394,23 +393,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Horoscope */}
-      {(profile.manglik || profile.rashi || profile.nakshatra) && (
-        <div className="card p-5">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Horoscope</h2>
-          <div className="space-y-3">
-            {profile.manglik && (
-              <DetailRow icon={Star} label="Manglik" value={profile.manglik} />
-            )}
-            {profile.rashi && (
-              <DetailRow icon={Star} label="Rashi" value={profile.rashi} />
-            )}
-            {profile.nakshatra && (
-              <DetailRow icon={Star} label="Nakshatra" value={profile.nakshatra} />
-            )}
-          </div>
-        </div>
-      )}
 
       {/* About */}
       {(profile.aboutMe || profile.partnerExpectations) && (

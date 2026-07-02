@@ -99,6 +99,7 @@ export default function EditProfilePage() {
   const [isCustomGotra, setIsCustomGotra] = useState(false)
   const [isCustomMotherGotra, setIsCustomMotherGotra] = useState(false)
   const [isCustomGrandmotherGotra, setIsCustomGrandmotherGotra] = useState(false)
+  const [dealbreakers, setDealbreakers] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (existingProfile) {
@@ -106,8 +107,11 @@ export default function EditProfilePage() {
       setIsCustomGotra(!existingProfile.gotraId && !!existingProfile.gotraCustom)
       setIsCustomMotherGotra(!existingProfile.motherGotraId && !!existingProfile.motherGotraCustom)
       setIsCustomGrandmotherGotra(!existingProfile.grandmotherGotraId && !!existingProfile.grandmotherGotraCustom)
+      try { setDealbreakers(JSON.parse(existingProfile.dealbreakers || '{}')) } catch { setDealbreakers({}) }
     }
   }, [existingProfile])
+
+  const toggleDb = (key: string) => setDealbreakers((d) => ({ ...d, [key]: !d[key] }))
 
   const set = <K extends keyof ProfileDTO>(k: K, v: ProfileDTO[K]) =>
     setForm((f) => ({ ...f, [k]: v }))
@@ -121,6 +125,7 @@ export default function EditProfilePage() {
     grandmotherGotraId: isCustomGrandmotherGotra ? null : (form.grandmotherGotraId ?? null),
     grandmotherGotraCustom: isCustomGrandmotherGotra ? (form.grandmotherGotraCustom ?? null) : null,
     prefMotherGotraId: form.prefMotherGotraId ?? null,
+    dealbreakers: JSON.stringify(dealbreakers),
   })
 
   const saveMut = useMutation({
@@ -365,21 +370,6 @@ export default function EditProfilePage() {
             <Field label="Kuldevi" optional>
               <input className="input" value={form.kuldevi ?? ''} onChange={(e) => set('kuldevi', e.target.value)} placeholder="e.g., Shila Mata, Bala Sundari" />
             </Field>
-            <Field label="Manglik">
-              <select className="input" value={form.manglik ?? 'NO'} onChange={(e) => set('manglik', e.target.value as any)}>
-                <option value="NO">No</option>
-                <option value="YES">Yes</option>
-                <option value="PARTIAL">Partial</option>
-              </select>
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Rashi" optional>
-                <input className="input" value={form.rashi ?? ''} onChange={(e) => set('rashi', e.target.value || null as any)} placeholder="e.g., Mesh, Vrishabha" />
-              </Field>
-              <Field label="Nakshatra" optional>
-                <input className="input" value={form.nakshatra ?? ''} onChange={(e) => set('nakshatra', e.target.value || null as any)} placeholder="e.g., Ashwini, Rohini" />
-              </Field>
-            </div>
           </div>
         </div>
 
@@ -587,6 +577,94 @@ export default function EditProfilePage() {
           </div>
         </div>
 
+        {/* Partner Preferences + dealbreakers */}
+        <div className="section-card">
+          <div className="section-header bg-gradient-to-r from-rose-50 to-white">
+            <div className="section-icon bg-rose-100">
+              <Heart size={15} className="text-rose-600" />
+            </div>
+            <h2 className="font-semibold text-gray-900 text-sm">Partner Preferences</h2>
+          </div>
+          <div className="section-body space-y-4">
+            <p className="text-xs text-gray-500 -mt-1">
+              These refine your matches. Turn on <span className="font-semibold text-rose-600">Dealbreaker</span> to
+              hide profiles that don't match — otherwise we just rank better matches higher.
+            </p>
+
+            {/* Age range */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Age range</label>
+                <DbToggle k="age" on={!!dealbreakers.age} onToggle={toggleDb} />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="number" className="input" placeholder="Min" value={form.prefMinAge ?? ''}
+                  onChange={(e) => set('prefMinAge', (e.target.value ? Number(e.target.value) : null) as any)} />
+                <span className="text-gray-400 text-sm">to</span>
+                <input type="number" className="input" placeholder="Max" value={form.prefMaxAge ?? ''}
+                  onChange={(e) => set('prefMaxAge', (e.target.value ? Number(e.target.value) : null) as any)} />
+              </div>
+            </div>
+
+            {/* Height range */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Height range (cm)</label>
+                <DbToggle k="height" on={!!dealbreakers.height} onToggle={toggleDb} />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="number" className="input" placeholder="Min" value={form.prefMinHeightCm ?? ''}
+                  onChange={(e) => set('prefMinHeightCm', (e.target.value ? Number(e.target.value) : null) as any)} />
+                <span className="text-gray-400 text-sm">to</span>
+                <input type="number" className="input" placeholder="Max" value={form.prefMaxHeightCm ?? ''}
+                  onChange={(e) => set('prefMaxHeightCm', (e.target.value ? Number(e.target.value) : null) as any)} />
+              </div>
+            </div>
+
+            {/* Minimum income */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Minimum income (LPA)</label>
+                <DbToggle k="income" on={!!dealbreakers.income} onToggle={toggleDb} />
+              </div>
+              <input type="number" className="input" placeholder="e.g., 8" value={form.prefMinIncomeLpa ?? ''}
+                onChange={(e) => set('prefMinIncomeLpa', (e.target.value ? Number(e.target.value) : null) as any)} />
+            </div>
+
+            {/* Minimum education */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Minimum education</label>
+                <DbToggle k="education" on={!!dealbreakers.education} onToggle={toggleDb} />
+              </div>
+              <select className="input" value={form.prefEducation ?? ''}
+                onChange={(e) => set('prefEducation', (e.target.value || null) as any)}>
+                <option value="">Any</option>
+                <option value="TWELFTH">12th</option>
+                <option value="DIPLOMA">Diploma</option>
+                <option value="GRADUATE">Graduate</option>
+                <option value="POST_GRADUATE">Post Graduate</option>
+                <option value="DOCTORATE">Doctorate</option>
+              </select>
+            </div>
+
+            {/* Preferred diet */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Preferred diet</label>
+                <DbToggle k="diet" on={!!dealbreakers.diet} onToggle={toggleDb} />
+              </div>
+              <select className="input" value={form.prefDiet ?? ''}
+                onChange={(e) => set('prefDiet', (e.target.value || null) as any)}>
+                <option value="">Any</option>
+                <option value="VEGETARIAN">Vegetarian</option>
+                <option value="EGGETARIAN">Eggetarian</option>
+                <option value="NON_VEGETARIAN">Non-Vegetarian</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={saveMut.isPending}
@@ -597,6 +675,22 @@ export default function EditProfilePage() {
         </button>
       </form>
     </div>
+  )
+}
+
+function DbToggle({ k, on, onToggle }: { k: string; on: boolean; onToggle: (k: string) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(k)}
+      className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-colors ${
+        on ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+      }`}
+      title="Dealbreaker: hide profiles that don't match this"
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${on ? 'bg-rose-500' : 'bg-gray-300'}`} />
+      Dealbreaker
+    </button>
   )
 }
 

@@ -4,11 +4,10 @@ import { Search, SlidersHorizontal, Users, X } from 'lucide-react'
 import { matchesApi } from '../../api/matches'
 import ProfileCard from '../../components/ProfileCard'
 
-type Tab = 'suggestions' | 'nearby' | 'premium'
+type Tab = 'suggestions' | 'premium'
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'suggestions', label: 'For You' },
-  { key: 'nearby',      label: 'Nearby'  },
   { key: 'premium',     label: 'Premium' },
 ]
 
@@ -71,7 +70,6 @@ export default function MatchesPage() {
         return matchesApi.search(params).then((r) => r.data.data)
       }
       if (tab === 'suggestions') return matchesApi.getSuggestions(0, 30).then((r) => r.data.data)
-      if (tab === 'nearby')      return matchesApi.getNearby(0, 30).then((r) => r.data.data)
       return matchesApi.getPremiumPicks(0, 30).then((r) => r.data.data)
     },
   })
@@ -209,16 +207,6 @@ export default function MatchesPage() {
                   <option value="GRADUATE">Graduate</option>
                   <option value="POST_GRADUATE">Post Graduate</option>
                   <option value="DOCTORATE">Doctorate</option>
-                </select>
-              </div>
-              {/* Manglik */}
-              <div>
-                <label className="label">Manglik</label>
-                <select className="input" value={pendingFilters.manglik} onChange={(e) => setF('manglik', e.target.value)}>
-                  <option value="">Any</option>
-                  <option value="NO">No</option>
-                  <option value="YES">Yes</option>
-                  <option value="PARTIAL">Partial</option>
                 </select>
               </div>
               {/* Family Type */}

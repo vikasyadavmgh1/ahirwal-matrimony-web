@@ -108,6 +108,9 @@ export interface ProfileDTO {
   prefEducation: EducationLevel | null
   prefOccupation: string[] | null
   prefDistricts: string[] | null
+  prefMinIncomeLpa: number | null
+  prefDiet: string | null
+  dealbreakers: string | null
   prefMotherGotraId: string | null
   prefExcludeMotherGotra: boolean
   profileCompletePct: number
