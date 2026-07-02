@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Check, Crown, Zap, Star, X, Loader2 } from 'lucide-react'
+import { Check, Crown, Zap, Star, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { subscriptionsApi, type PlanDTO, type OrderResponse } from '../../api/subscriptions'
+import { openRazorpayCheckout } from '../../utils/razorpay'
 
 const PLAN_META: Record<string, { icon: React.ReactNode; color: string; badge?: string }> = {
   SILVER: { icon: <Star size={20} />, color: 'text-gray-500' },
@@ -23,82 +24,9 @@ function durationLabel(days: number) {
   return '1 month'
 }
 
-function MockPaymentModal({
-  plan, order, onSuccess, onClose,
-}: {
-  plan: PlanDTO; order: OrderResponse; onSuccess: () => void; onClose: () => void
-}) {
-  const qc = useQueryClient()
-  const [step, setStep] = useState<'confirm' | 'processing' | 'done'>('confirm')
-
-  const verifyMut = useMutation({
-    mutationFn: () =>
-      subscriptionsApi.verifyPayment(order.orderId, `mock_pay_${Date.now()}`, 'mock_signature'),
-    onSuccess: () => { setStep('done'); qc.invalidateQueries({ queryKey: ['my-subscription'] }) },
-    onError: () => toast.error('Payment verification failed'),
-  })
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={step === 'confirm' ? onClose : undefined} />
-      <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6 shadow-float">
-
-        {step === 'confirm' && (
-          <>
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <X size={20} />
-            </button>
-            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Demo mode</p>
-            <h2 className="text-lg font-black text-gray-900 mb-1">Confirm Subscription</h2>
-            <p className="text-sm text-gray-500 mb-5">
-              No real payment — Razorpay keys not yet configured.
-            </p>
-            <div className="bg-gray-50 rounded-2xl p-4 mb-5 flex justify-between items-center">
-              <div>
-                <p className="font-bold text-gray-900">{plan.displayName} Plan</p>
-                <p className="text-sm text-gray-500">{durationLabel(plan.durationDays)}</p>
-              </div>
-              <p className="text-2xl font-black text-gray-900">₹{plan.priceInr}</p>
-            </div>
-            <button
-              onClick={() => { setStep('processing'); verifyMut.mutate() }}
-              className="btn-primary w-full py-3.5"
-            >
-              Activate {plan.displayName} (Demo)
-            </button>
-          </>
-        )}
-
-        {step === 'processing' && (
-          <div className="flex flex-col items-center py-10 gap-4">
-            <Loader2 size={36} className="animate-spin text-primary-500" />
-            <p className="font-bold text-gray-700">Activating subscription…</p>
-          </div>
-        )}
-
-        {step === 'done' && (
-          <div className="flex flex-col items-center py-8 gap-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-              <Check size={28} className="text-green-600" />
-            </div>
-            <div>
-              <p className="text-xl font-black text-gray-900">You're Premium!</p>
-              <p className="text-sm text-gray-500 mt-1">
-                {plan.displayName} active for {durationLabel(plan.durationDays)}.
-              </p>
-            </div>
-            <button onClick={onSuccess} className="btn-primary w-full py-3">Continue</button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export default function SubscriptionPage() {
   const qc = useQueryClient()
-  const [selectedPlan, setSelectedPlan] = useState<PlanDTO | null>(null)
-  const [activeOrder, setActiveOrder] = useState<OrderResponse | null>(null)
+  const [payingPlanId, setPayingPlanId] = useState<string | null>(null)
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['subscription-plans'],
@@ -110,13 +38,46 @@ export default function SubscriptionPage() {
     queryFn: () => subscriptionsApi.getMySubscription().then((r) => r.data.data),
   })
 
-  const createOrderMut = useMutation({
-    mutationFn: (planId: string) => subscriptionsApi.createOrder(planId).then((r) => r.data.data),
-    onSuccess: (order) => setActiveOrder(order),
-    onError: () => toast.error('Could not initiate payment. Try again.'),
+  const isPremium = mySubscription?.status === 'ACTIVE'
+
+  const verifyMut = useMutation({
+    mutationFn: (v: { orderId: string; paymentId: string; signature: string }) =>
+      subscriptionsApi.verifyPayment(v.orderId, v.paymentId, v.signature),
+    onSuccess: () => {
+      toast.success("Payment successful — you're Premium!")
+      qc.invalidateQueries({ queryKey: ['my-subscription'] })
+    },
+    onError: () => toast.error('Payment verification failed. If you were charged, contact support.'),
+    onSettled: () => setPayingPlanId(null),
   })
 
-  const isPremium = mySubscription?.status === 'ACTIVE'
+  async function startPayment(plan: PlanDTO) {
+    setPayingPlanId(plan.id)
+    try {
+      const order: OrderResponse = await subscriptionsApi
+        .createOrder(plan.id)
+        .then((r) => r.data.data)
+
+      await openRazorpayCheckout({
+        keyId: order.keyId,
+        orderId: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Ahirwal Matrimony',
+        description: `${plan.displayName} plan · ${durationLabel(plan.durationDays)}`,
+        onSuccess: (res) =>
+          verifyMut.mutate({
+            orderId: res.razorpay_order_id,
+            paymentId: res.razorpay_payment_id,
+            signature: res.razorpay_signature,
+          }),
+        onDismiss: () => setPayingPlanId(null),
+      })
+    } catch {
+      toast.error('Could not start payment. Please try again.')
+      setPayingPlanId(null)
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -158,7 +119,7 @@ export default function SubscriptionPage() {
             const features = Object.entries(plan.features)
               .filter(([, v]) => v === true)
               .map(([k]) => FEATURE_LABELS[k] ?? k)
-            const isCreating = createOrderMut.isPending && selectedPlan?.id === plan.id
+            const isPaying = payingPlanId === plan.id
 
             return (
               <div key={plan.id} className={`card p-5 relative ${meta.badge ? 'ring-2 ring-primary-400' : ''}`}>
@@ -190,17 +151,17 @@ export default function SubscriptionPage() {
                   ))}
                 </ul>
                 <button
-                  onClick={() => { setSelectedPlan(plan); createOrderMut.mutate(plan.id) }}
-                  disabled={isPremium || isCreating}
+                  onClick={() => startPayment(plan)}
+                  disabled={isPremium || isPaying || verifyMut.isPending}
                   className={`w-full py-3 rounded-2xl font-bold text-sm transition-all ${
                     isPremium
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : meta.badge ? 'btn-primary' : 'btn-secondary'
                   }`}
                 >
-                  {isCreating ? (
+                  {isPaying ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 size={14} className="animate-spin" /> Preparing…
+                      <Loader2 size={14} className="animate-spin" /> Opening payment…
                     </span>
                   ) : isPremium ? 'Currently subscribed' : `Get ${plan.displayName}`}
                 </button>
@@ -213,18 +174,6 @@ export default function SubscriptionPage() {
       <p className="text-xs text-gray-400 text-center mt-6">
         Plans auto-renew. Cancel anytime. Secure payments via Razorpay.
       </p>
-
-      {activeOrder && selectedPlan && (
-        <MockPaymentModal
-          plan={selectedPlan}
-          order={activeOrder}
-          onSuccess={() => {
-            setActiveOrder(null); setSelectedPlan(null)
-            qc.invalidateQueries({ queryKey: ['my-subscription'] })
-          }}
-          onClose={() => { setActiveOrder(null); setSelectedPlan(null) }}
-        />
-      )}
     </div>
   )
 }
